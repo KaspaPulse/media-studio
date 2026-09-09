@@ -24,7 +24,8 @@ def is_valid_url(value: str) -> bool:
 
 def ffmpeg_path() -> Path:
     if getattr(sys, "frozen", False):
-        return Path(sys._MEIPASS) / "resources" / "ffmpeg.exe"
+        binary_name = "ffmpeg.exe" if sys.platform == "win32" else "ffmpeg"
+        return Path(sys._MEIPASS) / "resources" / binary_name
     return Path(imageio_ffmpeg.get_ffmpeg_exe())
 
 
