@@ -1,10 +1,15 @@
 import os
+import runpy
+from pathlib import Path
+
+import pytest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
+import whatsapp_video_preparer.app as app_module
 from whatsapp_video_preparer.app import MainWindow
 from whatsapp_video_preparer.i18n import AR, EN
 
@@ -35,3 +40,11 @@ def test_english_is_ltr():
     window.apply_language()
     assert window.centralWidget().layoutDirection() == Qt.LeftToRight
     window.close()
+
+
+def test_entrypoint_can_run_as_top_level_pyinstaller_script(monkeypatch):
+    monkeypatch.setattr(app_module, "run", lambda: 0)
+    entrypoint = Path(__file__).parents[1] / "src" / "whatsapp_video_preparer" / "__main__.py"
+    with pytest.raises(SystemExit) as exc:
+        runpy.run_path(str(entrypoint), run_name="__main__")
+    assert exc.value.code == 0
