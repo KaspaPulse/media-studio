@@ -18,6 +18,17 @@ jobs:
       - name: Build and test
         shell: powershell
         run: .\build.ps1
+      - name: Verify EXE starts
+        shell: powershell
+        run: |
+          $exe = Resolve-Path 'dist\WhatsAppVideoPreparer.exe'
+          $p = Start-Process -FilePath $exe -PassThru
+          Start-Sleep -Seconds 8
+          if ($p.HasExited) {
+            throw "EXE exited early with code $($p.ExitCode)"
+          }
+          Stop-Process -Id $p.Id -Force
+          Write-Host 'EXE remained running for 8 seconds.'
       - name: Upload EXE
         uses: actions/upload-artifact@v4
         with:
