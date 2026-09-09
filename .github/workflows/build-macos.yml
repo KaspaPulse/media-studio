@@ -1,0 +1,62 @@
+name: Build macOS
+
+on:
+  push:
+    branches: [main, feature/macos-build]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x64
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build, test, and package
+        run: ./build_macos.sh "${{ matrix.arch }}"
+      - name: Verify native app starts
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="dist/WhatsAppVideoPreparer.app"
+          BIN="$APP/Contents/MacOS/WhatsAppVideoPreparer"
+          test -d "$APP"
+          test -x "$BIN"
+          file "$BIN"
+          codesign --verify --deep --strict "$APP"
+          QT_QPA_PLATFORM=offscreen QT_DEBUG_PLUGINS=1 "$BIN" >/tmp/whatsapp-video-preparer-smoke.log 2>&1 &
+          pid=$!
+          sleep 8
+          if kill -0 "$pid" 2>/dev/null; then
+            kill "$pid"
+            wait "$pid" || true
+            echo "GUI process remained alive for 8 seconds"
+          else
+            set +e
+            wait "$pid"
+            code=$?
+            set -e
+            echo "GUI process exited early with code $code"
+            echo "--- smoke log ---"
+            cat /tmp/whatsapp-video-preparer-smoke.log || true
+            exit "$code"
+          fi
+      - name: Upload macOS package
+        uses: actions/upload-artifact@v4
+        with:
+          name: WhatsAppVideoPreparer-macOS-${{ matrix.arch }}
+          path: |
+            dist/WhatsAppVideoPreparer-macOS-${{ matrix.arch }}.dmg
+            dist/WhatsAppVideoPreparer-macOS-${{ matrix.arch }}.dmg.sha256
+          if-no-files-found: error
