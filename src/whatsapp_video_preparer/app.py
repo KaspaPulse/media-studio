@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, QThread, Qt
-from PySide6.QtGui import QDesktopServices
+from PySide6.QtGui import QDesktopServices, QIcon
 from PySide6.QtWidgets import (
     QApplication, QFileDialog, QHBoxLayout, QLabel, QLineEdit,
     QComboBox, QDoubleSpinBox, QMainWindow, QMessageBox, QProgressBar, QPushButton, QVBoxLayout, QWidget,
@@ -15,6 +15,12 @@ from PySide6.QtCore import QUrl
 from .i18n import strings
 from .media import duration_to_seconds, is_valid_url
 from .worker import PrepareWorker
+
+
+def app_icon_path() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS) / "assets" / "app_icon.png"
+    return Path(__file__).resolve().parents[2] / "assets" / "app_icon.png"
 
 
 class MainWindow(QMainWindow):
@@ -254,6 +260,9 @@ def run() -> int:
     app = QApplication(sys.argv)
     app.setApplicationName("WhatsApp Video Preparer")
     app.setOrganizationName("KaspaPulse")
+    icon = QIcon(str(app_icon_path()))
+    app.setWindowIcon(icon)
     window = MainWindow()
+    window.setWindowIcon(icon)
     window.show()
     return app.exec()

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "whatsapp-video-preparer"
-version = "1.4.0"
+version = "1.4.1"
 description = "Windows and macOS GUI for preparing downloaded videos as WhatsApp-ready custom-duration clips"
 requires-python = ">=3.12"
 dependencies = [

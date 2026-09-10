@@ -4,6 +4,7 @@ Windows and macOS desktop app for downloading a user-provided video URL at the b
 
 ## Features
 - Native Windows `.exe` GUI with no console window.
+- Branded application icon embedded in Windows EXE, macOS app, and the running window.
 - Native macOS `.app` packaged in `.dmg` for Apple Silicon and Intel Macs.
 - Arabic RTL and English LTR interface.
 - URL and filesystem path fields remain LTR in both languages.
