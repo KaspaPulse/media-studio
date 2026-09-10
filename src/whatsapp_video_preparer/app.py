@@ -8,12 +8,12 @@ from PySide6.QtCore import QSettings, QThread, Qt
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QApplication, QFileDialog, QHBoxLayout, QLabel, QLineEdit,
-    QMainWindow, QMessageBox, QProgressBar, QPushButton, QVBoxLayout, QWidget,
+    QComboBox, QDoubleSpinBox, QMainWindow, QMessageBox, QProgressBar, QPushButton, QVBoxLayout, QWidget,
 )
 from PySide6.QtCore import QUrl
 
 from .i18n import strings
-from .media import is_valid_url
+from .media import duration_to_seconds, is_valid_url
 from .worker import PrepareWorker
 
 
@@ -23,6 +23,8 @@ class MainWindow(QMainWindow):
         self.settings = QSettings("KaspaPulse", "WhatsAppVideoPreparer")
         self.language = self.settings.value("language", "ar")
         self.last_result = ""
+        self.last_source = ""
+        self.last_clip = ""
         self.thread: QThread | None = None
         self.worker: PrepareWorker | None = None
         self._build_ui()
@@ -64,24 +66,51 @@ class MainWindow(QMainWindow):
         self.layout.addWidget(self.output_label)
         self.layout.addLayout(output_row)
 
+        self.segment_label = QLabel()
+        segment_row = QHBoxLayout()
+        self.segment_value = QDoubleSpinBox()
+        self.segment_value.setDecimals(2)
+        self.segment_value.setRange(1.0, 86400.0)
+        self.segment_value.setValue(29.0)
+        self.segment_unit = QComboBox()
+        self.segment_unit.addItem("Seconds", "seconds")
+        self.segment_unit.addItem("Minutes", "minutes")
+        self.segment_unit.addItem("Hours", "hours")
+        segment_row.addWidget(self.segment_value, 1)
+        segment_row.addWidget(self.segment_unit)
+        self.layout.addWidget(self.segment_label)
+        self.layout.addLayout(segment_row)
+
         action_row = QHBoxLayout()
         self.prepare_btn = QPushButton()
         self.prepare_btn.clicked.connect(self.start_prepare)
-        self.open_btn = QPushButton()
-        self.open_btn.setEnabled(False)
-        self.open_btn.clicked.connect(self.open_result)
         self.lang_btn = QPushButton()
         self.lang_btn.clicked.connect(self.toggle_language)
         action_row.addWidget(self.prepare_btn, 1)
-        action_row.addWidget(self.open_btn)
         action_row.addWidget(self.lang_btn)
         self.layout.addLayout(action_row)
+
+        result_row = QHBoxLayout()
+        self.open_source_btn = QPushButton()
+        self.open_source_btn.setEnabled(False)
+        self.open_source_btn.clicked.connect(self.open_source)
+        self.open_clip_btn = QPushButton()
+        self.open_clip_btn.setEnabled(False)
+        self.open_clip_btn.clicked.connect(self.open_clip)
+        self.open_btn = QPushButton()
+        self.open_btn.setEnabled(False)
+        self.open_btn.clicked.connect(self.open_result)
+        result_row.addWidget(self.open_source_btn)
+        result_row.addWidget(self.open_clip_btn)
+        result_row.addWidget(self.open_btn)
+        self.layout.addLayout(result_row)
 
         self.status_label = QLabel()
         self.status_label.setWordWrap(True)
         self.progress = QProgressBar()
-        self.progress.setRange(0, 1)
+        self.progress.setRange(0, 100)
         self.progress.setValue(0)
+        self.progress.setFormat("%p%")
         self.layout.addWidget(self.status_label)
         self.layout.addWidget(self.progress)
         self.layout.addStretch(1)
@@ -96,9 +125,18 @@ class MainWindow(QMainWindow):
         self.url_label.setText(t["url"])
         self.url_edit.setPlaceholderText(t["url_placeholder"])
         self.output_label.setText(t["output"])
+        self.segment_label.setText(t["segment_duration"])
+        current_unit = self.segment_unit.currentData()
+        self.segment_unit.clear()
+        for key in ("seconds", "minutes", "hours"):
+            self.segment_unit.addItem(t[f"unit_{key}"], key)
+        index = self.segment_unit.findData(current_unit)
+        self.segment_unit.setCurrentIndex(max(index, 0))
         self.browse_btn.setText(t["browse"])
         self.prepare_btn.setText(t["prepare"])
         self.open_btn.setText(t["open_folder"])
+        self.open_source_btn.setText(t["open_source"])
+        self.open_clip_btn.setText(t["open_clip"])
         self.lang_btn.setText(t["language"])
         if not self.thread:
             self.status_label.setText(t["ready"])
@@ -120,11 +158,13 @@ class MainWindow(QMainWindow):
         self.url_edit.setEnabled(not busy)
         self.output_edit.setEnabled(not busy)
         self.lang_btn.setEnabled(not busy)
+        self.segment_value.setEnabled(not busy)
+        self.segment_unit.setEnabled(not busy)
+        self.progress.setRange(0, 100)
         if busy:
-            self.progress.setRange(0, 0)
-        else:
-            self.progress.setRange(0, 1)
-            self.progress.setValue(1 if self.last_result else 0)
+            self.progress.setValue(0)
+        elif self.last_result:
+            self.progress.setValue(100)
 
     def start_prepare(self) -> None:
         t = strings(self.language)
@@ -139,12 +179,17 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, t["error"], str(exc))
             return
         self.last_result = ""
+        self.last_source = ""
+        self.last_clip = ""
         self.open_btn.setEnabled(False)
+        self.open_source_btn.setEnabled(False)
+        self.open_clip_btn.setEnabled(False)
         self.set_busy(True)
         self.status_label.setText(t["downloading"])
 
         self.thread = QThread(self)
-        self.worker = PrepareWorker(url, str(output))
+        segment_seconds = duration_to_seconds(self.segment_value.value(), self.segment_unit.currentData())
+        self.worker = PrepareWorker(url, str(output), segment_seconds)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.worker.progress.connect(self.on_progress)
@@ -155,21 +200,27 @@ class MainWindow(QMainWindow):
         self.thread.finished.connect(self._thread_finished)
         self.thread.start()
 
-    def on_progress(self, message: str) -> None:
+    def on_progress(self, stage: str, percent: int, detail: str) -> None:
         t = strings(self.language)
-        if message == "stage:download":
-            self.status_label.setText(t["downloading"])
-        elif message == "stage:convert":
-            self.status_label.setText(t["converting"])
-        elif message.startswith("download:"):
-            _, percent, speed = (message.split(":", 2) + ["", ""])[:3]
-            if percent != "done":
-                self.status_label.setText(t["download_progress"].format(percent=percent, speed=speed))
+        percent = max(0, min(100, int(percent)))
+        self.progress.setRange(0, 100)
+        self.progress.setValue(percent)
+        suffix = f" — {detail}" if detail else ""
+        if stage == "download":
+            self.status_label.setText(t["stage_download"].format(percent=percent) + suffix)
+        elif stage == "convert":
+            self.status_label.setText(t["stage_convert"].format(percent=percent) + suffix)
 
-    def on_completed(self, folder: str, count: int) -> None:
+    def on_completed(self, folder: str, count: int, source: str, first_clip: str) -> None:
         t = strings(self.language)
         self.last_result = folder
-        self.open_btn.setEnabled(True)
+        self.last_source = source
+        self.last_clip = first_clip
+        self.progress.setRange(0, 100)
+        self.progress.setValue(100)
+        self.open_btn.setEnabled(bool(folder))
+        self.open_source_btn.setEnabled(bool(source))
+        self.open_clip_btn.setEnabled(bool(first_clip))
         self.status_label.setText(f"{t['done']}  {t['clips_count'].format(count=count)}")
         QMessageBox.information(self, t["title"], f"{t['done']}\n{t['clips_count'].format(count=count)}")
 
@@ -185,6 +236,14 @@ class MainWindow(QMainWindow):
         self.set_busy(False)
         if thread:
             thread.deleteLater()
+
+    def open_source(self) -> None:
+        if self.last_source and Path(self.last_source).exists():
+            QDesktopServices.openUrl(QUrl.fromLocalFile(self.last_source))
+
+    def open_clip(self) -> None:
+        if self.last_clip and Path(self.last_clip).exists():
+            QDesktopServices.openUrl(QUrl.fromLocalFile(self.last_clip))
 
     def open_result(self) -> None:
         if self.last_result and Path(self.last_result).exists():
