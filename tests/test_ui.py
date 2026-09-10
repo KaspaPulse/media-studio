@@ -48,3 +48,49 @@ def test_entrypoint_can_run_as_top_level_pyinstaller_script(monkeypatch):
     with pytest.raises(SystemExit) as exc:
         runpy.run_path(str(entrypoint), run_name="__main__")
     assert exc.value.code == 0
+
+
+def test_segment_duration_controls_default_to_29_seconds():
+    get_app()
+    window = MainWindow()
+    assert window.segment_value.value() == 29
+    assert window.segment_value.minimum() == 1
+    assert window.segment_unit.currentData() == "seconds"
+    assert window.progress.minimum() == 0
+    assert window.progress.maximum() == 100
+    assert [window.segment_unit.itemData(i) for i in range(window.segment_unit.count())] == ["seconds", "minutes", "hours"]
+    window.close()
+
+
+def test_numeric_progress_updates_bar_and_stage_text():
+    get_app()
+    window = MainWindow()
+    window.language = "en"
+    window.apply_language()
+    window.on_progress("download", 42, "3.2 MiB/s · ETA 00:10")
+    assert window.progress.minimum() == 0
+    assert window.progress.maximum() == 100
+    assert window.progress.value() == 42
+    assert "42%" in window.status_label.text()
+    assert "3.2 MiB/s" in window.status_label.text()
+    window.close()
+
+
+def test_completion_enables_open_source_clip_and_folder(monkeypatch, tmp_path):
+    get_app()
+    window = MainWindow()
+    job = tmp_path / "job"
+    source = job / "original" / "source.mkv"
+    clip = job / "clips" / "status_000.mp4"
+    source.parent.mkdir(parents=True)
+    clip.parent.mkdir(parents=True)
+    source.write_bytes(b"source")
+    clip.write_bytes(b"clip")
+    monkeypatch.setattr("whatsapp_video_preparer.app.QMessageBox.information", lambda *args, **kwargs: None)
+    window.on_completed(str(job), 1, str(source), str(clip))
+    assert window.open_btn.isEnabled()
+    assert window.open_source_btn.isEnabled()
+    assert window.open_clip_btn.isEnabled()
+    assert window.last_source == str(source)
+    assert window.last_clip == str(clip)
+    window.close()

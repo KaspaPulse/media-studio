@@ -11,7 +11,10 @@ Windows and macOS desktop app for downloading a user-provided video URL at the b
 - Bundled FFmpeg processing.
 - Keeps the original downloaded source.
 - Creates MP4 clips using H.264 + AAC + yuv420p + faststart.
-- Splits into 29-second segments with forced keyframes.
+- Defaults to 29-second segments and lets the user choose a custom duration in seconds, minutes, or hours.
+- Shows numeric download and conversion/splitting progress, including download speed and ETA when available.
+- Provides post-completion actions to open the original file, first prepared clip, or results folder.
+- Uses forced keyframes at the selected segment boundary.
 - Preserves aspect ratio and avoids upscaling.
 - Caps the long edge at 1920 pixels.
 

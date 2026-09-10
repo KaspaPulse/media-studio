@@ -22,5 +22,5 @@ Read `PLANS.md` only when it contains a multi-stage plan marked `ACTIVE`.
 The Windows application must launch as a GUI without a visible console window.
 Arabic UI uses RTL layout; English UI uses LTR layout.
 URL and filesystem path inputs remain LTR in both languages.
-The media flow keeps the original source, prepares MP4 H.264/AAC output, and splits clips at 29 seconds.
+The media flow keeps the original source, prepares MP4 H.264/AAC output, defaults to 29-second clips, and supports user-selected segment duration.
 Do not claim interactive Windows GUI validation unless the executable was actually run on Windows.
