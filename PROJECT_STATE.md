@@ -1,30 +1,31 @@
 # PROJECT_STATE.md
 
-Updated: 2026-09-09
+Updated: 2026-09-10
 Repository: `KaspaPulse/whatsapp-video-preparer` (private)
 Default branch: `main`
 
 ## Reconciled actual state
-Release implementation commit: `3209a9d124cbc60ca767eefdb3e0920cfa55ec5c` — `Merge PR #1: Add native macOS builds`.
-PR #1 `Add native macOS builds` is merged into `main`.
-Application version is `1.3.1`.
-Merged-main Windows workflow run `34389211307` completed successfully, including build/tests, EXE startup smoke test, and artifact upload.
-Merged-main macOS workflow run `34389211325` completed successfully for Apple Silicon arm64 and Intel x64, including build/tests, native app startup smoke tests, and artifact uploads.
+Current implementation commit: `7424145f3add3b74d8e1536dcabbff16e40fe25d` — `Merge pull request #2 from KaspaPulse/feature/progress-duration-controls`.
+PR #2 is merged into `main`; application version is `1.4.0`.
+Windows workflow run `34450323217` completed successfully, including tests, EXE build, GUI startup smoke test, and artifact upload.
+macOS workflow run `34450323265` completed successfully for Apple Silicon arm64 and Intel x64, including tests, package build, native startup smoke tests, and artifact uploads.
+Local feature staging files were removed after release verification.
 
 ## Published release
-Release `v1.3.1` is published and targets commit `3209a9d124cbc60ca767eefdb3e0920cfa55ec5c`.
-Release URL: `https://github.com/KaspaPulse/whatsapp-video-preparer/releases/tag/v1.3.1`.
-Final asset `WhatsAppVideoPreparer-Windows-x64.exe`: 123701085 bytes, SHA-256 `82f731545d89198cfd3a3f9d49237d889f9905f554c9bd80dbd2570809cdf06a`.
-Final asset `WhatsAppVideoPreparer-macOS-arm64.dmg`: 108367701 bytes, SHA-256 `3ab61c2edf13fa9b3621ad253900f5e2a29d762ff8abb2a1e4999dae6eba2049`.
-Final asset `WhatsAppVideoPreparer-macOS-x64.dmg`: 121754327 bytes, SHA-256 `1923206ce48d608ec1e03f80009d0e917194daf61202d03c9184fba145855542`.
-GitHub reports all three release assets in `uploaded` state with matching digests.
-The stale `v1.3.0` Windows executable must not be used.
+Release `v1.4.0` is published and targets commit `7424145f3add3b74d8e1536dcabbff16e40fe25d`.
+Release URL: `https://github.com/KaspaPulse/whatsapp-video-preparer/releases/tag/v1.4.0`.
+`WhatsAppVideoPreparer-Windows-x64.exe`: 123705550 bytes, SHA-256 `4561cc9d3f798fee154835fb95fb5b3230431bf6ec3338e40bb51c55e1a1fa8e`.
+`WhatsAppVideoPreparer-macOS-arm64.dmg`: 106939037 bytes, SHA-256 `1d5789fcc5e797457c4175a1354c3b4576ea3c529720107660b1e6860ba77788`.
+`WhatsAppVideoPreparer-macOS-x64.dmg`: 122879883 bytes, SHA-256 `0c5d0365a10aac5d9924adce46eb1e9aac1e6e1ed9af3d0489044f60c69dca88`.
+GitHub reports exactly these three release assets in `uploaded` state with matching sizes and digests.
 
-## Current confidence
-The corrected Windows EXE has a successful automated startup smoke test on a Windows GitHub Actions runner and is a PE32+ GUI x86-64 executable.
-Both macOS architecture packages have successful native macOS startup smoke tests on GitHub Actions.
-Interactive end-user workflow validation remains separate from CI smoke verification.
-macOS packages are ad-hoc signed but not Apple Developer ID notarized; Gatekeeper may require `Open Anyway` on first launch.
+## v1.4.0 behavior
+The UI shows numeric 0–100% progress for download and FFmpeg conversion/splitting; download detail includes speed and ETA when yt-dlp provides them.
+Segment duration is user-selectable in seconds, minutes, or hours and defaults to 29 seconds.
+After success, separate actions open the original source, first prepared clip, and results folder.
+Windows remains a GUI executable without a console; Arabic is RTL, English is LTR, and URL/path inputs remain LTR.
+The media pipeline keeps the original source and outputs H.264/AAC MP4 clips with forced keyframes and no upscaling.
 
-## NEXT ACTION
-Have the user validate the published `v1.3.1` on their actual Windows and macOS machines: launch, Arabic RTL/English LTR switching, URL download, original-source retention, 29-second H.264/AAC segmentation, and result-folder opening. Treat any observed failure as a targeted defect and do not repeat successful broad builds or audits without evidence of regression.
+## Current confidence and NEXT ACTION
+Automated and integration verification is complete for the published artifacts; interactive end-user workflow validation remains separate from CI smoke tests.
+NEXT ACTION: validate `v1.4.0` on an actual Windows and macOS desktop using a real authorized video URL, including progress display, custom duration, produced clip lengths/codecs, and all open-file/open-folder actions. Any observed failure should be handled as a targeted defect without repeating successful broad builds.
