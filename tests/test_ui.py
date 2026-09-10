@@ -94,3 +94,10 @@ def test_completion_enables_open_source_clip_and_folder(monkeypatch, tmp_path):
     assert window.last_source == str(source)
     assert window.last_clip == str(clip)
     window.close()
+
+
+def test_application_icon_asset_is_available():
+    from whatsapp_video_preparer.app import app_icon_path
+    path = app_icon_path()
+    assert path.name == "app_icon.png"
+    assert path.is_file()

@@ -13,9 +13,11 @@ python -m PyInstaller `
   --clean `
   --onefile `
   --windowed `
+  --icon assets\app_icon.ico `
   --name WhatsAppVideoPreparer `
   --paths src `
   --collect-all yt_dlp `
+  --add-data "assets\app_icon.png;assets" `
   --add-binary "build_resources\ffmpeg.exe;resources" `
   src\whatsapp_video_preparer\__main__.py
 
