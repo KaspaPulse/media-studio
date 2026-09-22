@@ -24,3 +24,11 @@ Arabic UI uses RTL layout; English UI uses LTR layout.
 URL and filesystem path inputs remain LTR in both languages.
 The media flow keeps the original source, prepares MP4 H.264/AAC output, defaults to 29-second clips, and supports user-selected segment duration.
 Do not claim interactive Windows GUI validation unless the executable was actually run on Windows.
+
+## Interruption-safe continuity — owner baseline v2
+
+Read and apply [the interruption-safe execution supplement](docs/continuity/INTERRUPTION_SAFE_EXECUTION.md), subordinate to this repository contract.
+Use [repository adoption](docs/continuity/REPOSITORY_ADOPTION.md), [resume procedure](docs/continuity/RESUME.md) and [checkpoint template](docs/continuity/CHECKPOINT_TEMPLATE.md) with the existing canonical ledger.
+Persist material-operation intent before execution; verify and record outcomes immediately afterward. Recover unknown outcomes before retrying.
+Preserve local work, active task ownership, project-specific hosts, authorization limits and valid source-bound evidence.
+Validate NEXT ACTION, then continue authorized work rather than merely summarize. This policy grants no push, release or production authority.
