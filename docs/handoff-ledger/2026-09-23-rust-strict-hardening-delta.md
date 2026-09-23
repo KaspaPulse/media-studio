@@ -1,85 +1,55 @@
-# Rust strict hardening delta â€” local qualification handoff
+# Rust strict hardening delta — final closure handoff
 
-Date: 2026-09-23
+Date: 2026-09-24
 Task: `WVP_RUST_STRICT_HARDENING_DELTA`
 Repository: `KaspaPulse/whatsapp-video-preparer`
-Host: `Server`
+Final task status: VERIFIED_SUCCESS / TASK_CLOSED
 
-## Identity
-- Baseline main: `5edda96a0a23b486ffbaa73b9c55ff46b6510418`
-- Branch: `feat/rust-strict-hardening-20260923`
-- Technical checkpoint: `db6685287424f9c27f434473609356523687c1d8`
-- Technical tree: `7b168eb1fa2d5ec4848516bcea5c3ca55969ae00`
+## Qualified technical identity
+- Hardening PR: #7 — MERGED_SQUASH
+- Qualified technical main SHA: `7c1d608fbd78fed2e0fcc52c30e85a3d9546628f`
+- Qualified technical main tree: `615d24aa0021919cb1c30bb06db56b6bfe36e8e3`
+- Repository visibility after owner-authorized capability change: PUBLIC
+- Application version: `2.0.0`
 
-## Scope
-The hardening delta changes workflow orchestration, Rust `xtask` validation,
-dependency policy, KSSS local strengthening, and the iced renderer feature set.
-It does not modify product `src/*.rs`, tests, or `build.rs`.
+## Rust and dependency result
+The hardening delta did not modify product `src/*.rs`. It moved remaining owned workflow logic into Rust `xtask`, enforced declarative workflow orchestration, retained full-SHA Action pinning, and added cargo-deny policy.
 
-## Security finding and remediation
-Strict cargo-deny initially discovered `RUSTSEC-2026-0253` through:
-`iced_wgpu -> cryoglyph -> lru 0.16.4`.
+`RUSTSEC-2026-0253` was removed from every qualified active Windows/macOS dependency graph by using the stable iced 0.14.0 tiny-skia feature path. No advisory ignore was added. `Cargo.lock` may retain inactive optional records; the affected crates are unreachable in the qualified target-filtered graphs.
 
-No advisory ignore was added. A scratch all-target graph established a stable
-same-version remediation: iced 0.14.0 with default features disabled and
-`tokio,image,tiny-skia` enabled.
+## Exact-head evidence
+- Rust Policy `35918330368`: SUCCESS.
+- Windows `35918329646`: SUCCESS.
+- macOS `35918329621`: SUCCESS on x64 and arm64.
 
-The qualified target-filtered dependency graphs for `x86_64-pc-windows-msvc`,
-`aarch64-apple-darwin`, and `x86_64-apple-darwin` have no reachable `lru`,
-`cryoglyph`, or `iced_wgpu`; `iced_tiny_skia 0.14.1` is present on each target.
-`Cargo.lock` may retain inactive optional package records for those crates. The
-lockfile has zero new package identities and 105 removed identities relative to
-baseline. Therefore `RUSTSEC-2026-0253` has no active path in the qualified
-Windows/macOS build graphs.
+## Exact-main evidence
+- Rust Policy `35921197250`: SUCCESS.
+- Windows run `35921197316`, attempt 2: SUCCESS.
+- macOS run `35921197346`, attempt 2: SUCCESS.
+- Windows build provenance: SUCCESS.
+- Windows SPDX SBOM attestation: SUCCESS.
+- macOS x64 build provenance: SUCCESS.
+- macOS x64 SPDX SBOM attestation: SUCCESS.
+- macOS arm64 build provenance: SUCCESS.
+- macOS arm64 SPDX SBOM attestation: SUCCESS.
 
-## Strict Rust workflow hardening
-- workflow YAML permits declarative orchestration and simple Rust tool invocations;
-- explicit shell selectors and inline script business logic are rejected;
-- external Actions require full 40-character SHAs;
-- the package size regression is orchestrated by Rust `xtask`, not PowerShell;
-- `actions/attest` v4.2.2 is pinned to `1e69f48acb82d1966a394da916b4c1698aa569d6`;
-- `cargo-deny-action` v2.1.1 is pinned to `3c6349835b2b7b196a839186cb8b78e02f7b5f25`.
+## Capability transition
+The first main attestation attempt failed only at GitHub persistence with the private-repository capability error. Artifact download and the attestation action itself started normally. The owner then explicitly authorized changing the repository to public. After the visibility change, failed workflow paths were rerun and all provenance/SBOM attestation steps succeeded.
 
-## Local evidence
-- `hardening-xtask-verify-post-remediation.log`: strict gate PASS.
-- `hardening-cargo-deny-post-remediation.log`: advisories/licenses/bans/sources PASS; zero errors.
-- `hardening-locked-check.log`: locked offline workspace/all-target check PASS.
-- `hardening-clippy.log`: Clippy `-D warnings` PASS.
-- `hardening-tests.log`: 11 passed / 0 failed.
-- `hardening-release-build.log`: release build PASS.
-- `hardening-package-windows.log`: package and pinned helpers PASS.
-- `hardening-size-budget-package.log`: real high-motion size regression 1 PASS / 0 FAIL.
-- `hardening-gui-smoke.log`: packaged GUI remained alive for 6 seconds; PASS.
+No security control was disabled, skipped, or marked as a fake PASS.
 
-Release/package executable SHA-256:
-`a8bc8aec5be3b872016b05c3f9891bc629873e67f54b2cd170e679eb1d7b87c3`.
+## Rust-only final state
+- application logic: Rust-only;
+- tests: Rust-only;
+- owned build/packaging/validation logic: Rust-only;
+- workflow inline script business logic: absent;
+- external Actions: full-SHA pinned;
+- cargo-deny: PASS;
+- GitHub language accounting on the qualified technical main: Rust only;
+- forbidden tracked executable-code extensions: zero.
 
-Independent package SHA256SUMS verification: 4/4 PASS.
-
-## Evidence boundaries
-Rust v2 product/media algorithm evidence remains reusable because product source
-did not change. The iced renderer dependency graph did change, so Windows
-binary/runtime evidence was requalified locally.
-
-Native macOS hardening evidence must come from the new exact-head GitHub CI; the
-previous Rust v2 macOS PASS cannot be transferred to the changed renderer graph.
-
-## Remote state
-Push: NOT_STARTED.
-PR: NOT_STARTED.
-Merge: NOT_STARTED.
-New exact-head CI: NOT_RUN.
-Main-only attestations: NOT_RUN.
-Private-repository attestation plan eligibility: NOT_VERIFIED.
-Release/tag/deployment: NOT_STARTED.
-
-The previous GitHub Actions budget failure is historical until current GitHub
-state is re-observed for this new head.
+## Scope boundary
+Release, tag, and deployment remain NOT_STARTED.
 
 ## Resume
-Use the canonical operation journal at:
-`C:\WVP-Rust-Migration-20260923\OPERATION_JOURNAL.md`
-
-NEXT_SAFE_ACTION: if publication is within authorization, re-observe remote
-main/open PRs, then publish this existing qualified branch and require exact
-new-head Windows/macOS/Rust Policy CI.
+The task is closed. Reuse this evidence while validity predicates remain unchanged. Any release/tag/deployment or feature work starts as a separate task.
