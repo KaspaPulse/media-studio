@@ -43,6 +43,16 @@ FFmpeg, FFprobe, and yt-dlp are external helper boundaries, not repository-owned
 Invoke them only with structured process APIs and argument arrays; never construct shell
 command strings from user input. Pin and verify helper identities for distributable artifacts.
 
+## Strict workflow ownership
+
+Workflow YAML is declarative orchestration, not a second implementation language.
+Repository-owned build, packaging, validation, policy, and test logic belongs in Rust
+(primarily `xtask`). Simple `cargo`, `rustup`, and `rustc` invocations are
+allowed in workflow `run` steps; inline PowerShell/Bash business logic, explicit script
+shells, and repository-owned .ps1/.sh/.py execution are forbidden. External Actions must
+use full 40-character commit SHAs. Dependency-policy and attestation identities are pinned
+and validated by the repository/KSSS gate.
+
 ## WhatsApp byte-budget invariant
 
 The user-selected duration is a maximum, not permission to exceed the byte limit.
