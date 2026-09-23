@@ -5,17 +5,20 @@ Repository: `KaspaPulse/whatsapp-video-preparer`
 Default branch: `main`
 Rust v2 PR: #5 — MERGED_SQUASH
 
-## Merged main identity
+## Rust v2 implementation merge identity
 
-- Main SHA: `feeb43230e688496888a843809333c41a119d35f`
-- Main tree: `9f00816972fb68ebb68971b4aeb863916b4fb21d`
+- Rust v2 merge SHA: `feeb43230e688496888a843809333c41a119d35f`
+- Rust v2 merge tree: `9f00816972fb68ebb68971b4aeb863916b4fb21d`
+- Current main SHA: VERIFY DYNAMICALLY; documentation-only reconciliation may advance commit identity without changing product/workflow bytes.
 - PR exact head: `0bc8c1b6956eeef7bea1987f4bd6fddaa09186f9`
 - PR exact-head tree: `9f00816972fb68ebb68971b4aeb863916b4fb21d`
 - Merge method: squash
 - Candidate/application version: `2.0.0`
 
-The squash merge preserved the exact qualified candidate tree. The PR head and
-merged main therefore differ by commit identity only, not repository tree bytes.
+The Rust v2 squash merge preserved the exact qualified candidate tree. The PR
+head and Rust v2 merge therefore differ by commit identity only, not repository
+tree bytes. Later documentation-only state reconciliation does not redefine this
+implementation identity.
 
 ## Rust-only repository-owned implementation
 

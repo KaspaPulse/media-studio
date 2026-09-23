@@ -8,9 +8,10 @@ Maintain the completed Rust v2 transformation, WhatsApp byte-budget guarantee,
 pinned KSSS v1.2.0 adoption, and interruption-safe continuity without replaying
 valid evidence.
 
-## Merged identity
-- Main SHA: feeb43230e688496888a843809333c41a119d35f
-- Main tree: 9f00816972fb68ebb68971b4aeb863916b4fb21d
+## Merged implementation identity
+- Rust v2 merge SHA: feeb43230e688496888a843809333c41a119d35f
+- Rust v2 merge tree: 9f00816972fb68ebb68971b4aeb863916b4fb21d
+- Current main SHA: VERIFY DYNAMICALLY
 - PR #5: MERGED_SQUASH
 - PR exact head: 0bc8c1b6956eeef7bea1987f4bd6fddaa09186f9
 - PR exact-head tree: 9f00816972fb68ebb68971b4aeb863916b4fb21d

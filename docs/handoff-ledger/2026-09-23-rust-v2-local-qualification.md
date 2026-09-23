@@ -32,8 +32,9 @@ and operation state is in `OPERATION_JOURNAL.md`.
 
 PR #5 was squash-merged.
 
-- Main SHA: `feeb43230e688496888a843809333c41a119d35f`
-- Main tree: `9f00816972fb68ebb68971b4aeb863916b4fb21d`
+- Rust v2 implementation merge SHA: `feeb43230e688496888a843809333c41a119d35f`
+- Rust v2 implementation merge tree: `9f00816972fb68ebb68971b4aeb863916b4fb21d`
+- Current main SHA: verify dynamically after documentation-only reconciliation
 - PR exact head: `0bc8c1b6956eeef7bea1987f4bd6fddaa09186f9`
 - PR exact-head tree: `9f00816972fb68ebb68971b4aeb863916b4fb21d`
 - Windows PR CI `35896904411`: SUCCESS
