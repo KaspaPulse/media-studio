@@ -1,0 +1,18 @@
+{
+  "schema_family": "local-strengthening",
+  "schema_version": "1.0.0",
+  "repository": "KaspaPulse/whatsapp-video-preparer",
+  "controls": {
+    "WVP-SIZE-001": {
+      "requirement": "Every generated clip must be measured after encoding and remain below the configured byte target.",
+      "target_bytes": 9500000,
+      "hard_limit_bytes": 10000000
+    },
+    "WVP-RUST-001": {
+      "requirement": "Repository-owned executable code, tests, and build tooling are Rust-only."
+    },
+    "WVP-CONT-001": {
+      "requirement": "Persist progress after every meaningful state transition and recover UNKNOWN outcomes before retry."
+    }
+  }
+}

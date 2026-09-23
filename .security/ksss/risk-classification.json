@@ -1,0 +1,15 @@
+{
+  "schema": "wvp-ksss-risk-classification-v1",
+  "repository": "KaspaPulse/whatsapp-video-preparer",
+  "risk": {
+    "exposure": "internet-facing",
+    "data": "sensitive",
+    "privilege": "standard",
+    "criticality": "medium"
+  },
+  "rationale": [
+    "The desktop client accepts internet video URLs and invokes media helper processes.",
+    "Downloaded user media and generated clips can contain sensitive personal content.",
+    "The application runs with the interactive user's standard filesystem privileges."
+  ]
+}

@@ -1,5 +1,7 @@
 # WhatsApp Video Preparer Design
 
+Status: Historical v1 design, superseded by the Rust v2 architecture documented in `README.md` and `PROJECT_STATE.md`. The v1 1920-pixel/one-pass segmentation notes below are retained as history and are not the current size-budget contract.
+
 ## Goal
 Build a Windows desktop `.exe` that downloads a user-supplied video URL, keeps the highest-quality source, converts it to WhatsApp-friendly MP4, and splits it into 29-second clips.
 

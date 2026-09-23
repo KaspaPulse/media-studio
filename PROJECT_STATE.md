@@ -1,31 +1,90 @@
-# PROJECT_STATE.md
+# PROJECT STATE
 
-Updated: 2026-09-10
-Repository: `KaspaPulse/whatsapp-video-preparer` (private)
+Updated: 2026-09-23
+Repository: `KaspaPulse/whatsapp-video-preparer`
 Default branch: `main`
+Active local branch: `wvp-rust-ksss-20260923`
+Baseline main observed: `a605b3d30d6aed7304f9d9b617a31f86c00fb3da`
+Candidate version: `2.0.0`
+Qualified implementation commit: `28fa0cb980df6468a8bfe32c5b42994bdffffde5`
+Qualified implementation tree: `462730225a5138732f533aa26265ddb37399b2aa`
 
-## Reconciled actual state
-Current implementation commit: `90f1d7ebbf9470e9e1c8fcd72f37cc4126e70c42` — merge of PR #3 `Add branded application icon`.
-Application version is `1.4.1`.
-Windows workflow run `34453989542` completed successfully, including 21 tests, EXE build, icon embedding, GUI startup smoke test, and artifact upload.
-macOS workflow run `34453989477` completed successfully for Apple Silicon arm64 and Intel x64, including tests, package build, signing verification, GUI startup smoke tests, and artifact uploads.
-The feature branch and local release staging directory were removed after verification.
+## Current candidate
 
-## Published release
-Release `v1.4.1` is published, is not a draft or prerelease, and targets implementation commit `90f1d7ebbf9470e9e1c8fcd72f37cc4126e70c42`.
-Release URL: `https://github.com/KaspaPulse/whatsapp-video-preparer/releases/tag/v1.4.1`.
-`WhatsAppVideoPreparer-Windows-x64.exe`: 123714623 bytes, SHA-256 `eae1734772d4658cc1086643bb332e737d472fbf8bbfe6b4b2bd65b31f63dab0`.
-`WhatsAppVideoPreparer-macOS-arm64.dmg`: 107020281 bytes, SHA-256 `c23280a99bbacb36fbaf70ea5bfed91550ce601272450a1e1b128f5d835ecfbe`.
-`WhatsAppVideoPreparer-macOS-x64.dmg`: 122970326 bytes, SHA-256 `af8a0b7705f52496c117b17475429ba137e7b7312757d4fd05ffa52ff58826a2`.
-GitHub reports exactly these three release assets in `uploaded` state with matching sizes and digests.
+The repository-owned implementation has been rebuilt in Rust. The former
+Python/PySide6 application, Python tests, `pyproject.toml`, PowerShell build
+script, and Bash build script are retired from the candidate tree. External
+FFmpeg, FFprobe, and yt-dlp binaries remain explicit pinned helper boundaries.
 
-## v1.4.1 icon verification
-The approved green video-preparation mark is stored as `assets/app_icon.png`, `assets/app_icon.ico`, and `assets/app_icon.icns`.
-Windows PyInstaller logged `Copying icon to EXE`; the final PE contains both RT_ICON and RT_GROUP_ICON resources.
-Both macOS DMGs contain `Contents/Resources/app_icon.icns` and `Contents/Resources/assets/app_icon.png`, and each Info.plist sets `CFBundleIconFile` to `app_icon.icns`.
-The Qt runtime loads the bundled PNG as both the application and window icon.
-All v1.4.0 progress, custom-duration, RTL/LTR, media, and result-opening behavior remains in v1.4.1.
+The WhatsApp defect root cause was duration-only segmentation without an
+enforced post-encode byte limit. v2 targets 9,500,000 bytes under a
+10,000,000-byte hard limit, measures each encoded file, and retries only an
+oversized clip with a lower bitrate.
+## Locally verified evidence
 
-## Current confidence and NEXT ACTION
-Automated packaging and startup verification is complete for all published v1.4.1 artifacts. Interactive confirmation that the branded icon is visually displayed in Windows Explorer/taskbar/window and macOS Finder/Dock remains an end-user visual check.
-NEXT ACTION: have the user run the published `v1.4.1` on their actual desktop and confirm the icon appearance. Treat any observed icon-display issue as a targeted defect without repeating successful media/build verification.
+- Rust toolchain: 1.98.1.
+- Repository/KSSS Rust gate: PASS.
+- `cargo fmt --all -- --check`: PASS on final source after the last Rust edit.
+- `cargo clippy --workspace --all-targets --locked -- -D warnings`: PASS.
+- Workspace tests: 11 passed, 0 failed; real helper-dependent test ignored in
+  the ordinary suite by design.
+- Real high-motion size-budget integration test: PASS, 1 passed / 0 failed,
+  using the pinned packaged FFmpeg and FFprobe.
+- `cargo build --release --locked -p whatsapp-video-preparer`: PASS.
+- Windows final package: PASS; all four entries in `SHA256SUMS` independently
+  matched.
+- Packaged Windows GUI bounded startup smoke: PASS; the spawned GUI remained
+  alive for 6 seconds and only that captured PID was terminated.
+- Final Windows EXE SHA-256:
+  `5be021c19a3efb69045b0d04a56fb8e0584bd05996c2be32dabe9a8fa8cca6a1`.
+## Helper supply-chain identities
+
+Windows package helper SHA-256 values:
+
+- FFmpeg: `4044b3924c977ad31229d504c5d5b8685f9553124fbaff6e9c99048b42830341`
+- FFprobe: `fc37ca23d31ee08bb8f7e108edf3822f6ef3efc1a8d306bbe0b779190230710b`
+- yt-dlp: `66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a`
+
+The Rust `xtask` downloads to a process-specific partial path, syncs bytes,
+verifies SHA-256 before publication into the package, rejects mismatched
+existing helpers, sets executable permissions where required, and performs a
+version self-check.
+## KSSS binding
+
+Pinned KSSS identity:
+
+- Release: `v1.2.0`
+- Source SHA: `967ed5068947a39961d5d5cc483ef65d25a61059`
+- Policy bundle:
+  `3c1c8b449d736aba5fec5cffd688496b06d81f287f55fff4c3f42e36c3b58ec6`
+- Consumer Runtime SHA-256:
+  `38309d2ab8fa30096d99940f855e88173faa182e60db33f2a96b2d3408507430`
+- Runtime sequence: 2
+- Trust root: `ksss-trust-root-1`
+
+The repository validates pinned adoption/risk/applicability identities locally
+with Rust. This is not a claim that KSSS cryptographic acquisition acceptance,
+GitHub CI, release publication, or production adoption has occurred.
+## Remote and platform status
+
+- GitHub candidate push: NOT_STARTED.
+- Pull request: NOT_STARTED.
+- Merge: NOT_STARTED.
+- Rust v2 GitHub Actions: NOT_RUN.
+- macOS v2 package/runtime qualification: NOT_VERIFIED; its workflow is defined
+  for native arm64 and x64 GitHub-hosted runners.
+- Rust v2 release: NOT_PUBLISHED.
+- Historical published release v1.4.1 remains unchanged.
+
+## Continuity
+
+Canonical operation journal:
+`C:\WVP-Rust-Migration-20260923\OPERATION_JOURNAL.md`
+
+Current Git HEAD must always be verified dynamically. The journal records
+operation receipts and the eventual local checkpoint commit identity.
+
+NEXT ACTION: preserve the qualified implementation commit and proceed to
+GitHub publication/integration only when that external mutation is within the
+active authorization boundary. Before any push, re-observe remote `main`, open
+PRs, branch state, and rulesets; do not repeat still-valid local qualification.

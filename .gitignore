@@ -1,10 +1,7 @@
-__pycache__/
-*.py[cod]
-.pytest_cache/
-.venv/
-build/
-dist/
-build_resources/
-*.spec
-
-*.egg-info/
+/target/
+/dist/
+/.artifacts/
+/.ksss-cache/
+*.log
+.DS_Store
+Thumbs.db

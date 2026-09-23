@@ -1,37 +1,91 @@
-name: Build Windows EXE
+name: Rust Windows
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: rust-windows-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
 jobs:
   build:
-    runs-on: windows-latest
-    permissions:
-      contents: read
+    runs-on: windows-2022
+    timeout-minutes: 75
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Build and test
-        shell: powershell
-        run: .\build.ps1
-      - name: Verify EXE starts
-        shell: powershell
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install pinned Rust toolchain
+        shell: pwsh
         run: |
-          $exe = Resolve-Path 'dist\WhatsAppVideoPreparer.exe'
-          $p = Start-Process -FilePath $exe -PassThru
-          Start-Sleep -Seconds 8
-          if ($p.HasExited) {
-            throw "EXE exited early with code $($p.ExitCode)"
-          }
-          Stop-Process -Id $p.Id -Force
-          Write-Host 'EXE remained running for 8 seconds.'
-      - name: Upload EXE
-        uses: actions/upload-artifact@v4
+          rustup toolchain install 1.98.1 --profile minimal --component rustfmt,clippy
+          rustup default 1.98.1
+          rustc --version
+          cargo --version
+
+      - name: Repository and KSSS gate
+        run: cargo run -p xtask --locked -- verify
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Rust tests
+        run: cargo test --workspace --all-targets --locked
+
+      - name: Build release executable
+        run: cargo build --release --locked -p whatsapp-video-preparer
+
+      - name: Package with pinned media helpers
+        run: cargo run -p xtask --locked -- package-windows target/release/whatsapp-video-preparer.exe .artifacts/package/WhatsAppVideoPreparer-Windows-x64
+      - name: Real size-budget regression test
+        shell: pwsh
+        run: |
+          $env:WVP_FFMPEG = (Resolve-Path '.artifacts/package/WhatsAppVideoPreparer-Windows-x64/resources/ffmpeg.exe').Path
+          $env:WVP_FFPROBE = (Resolve-Path '.artifacts/package/WhatsAppVideoPreparer-Windows-x64/resources/ffprobe.exe').Path
+          cargo test --locked --test size_budget -- --ignored --nocapture
+
+      - name: Native GUI startup smoke
+        run: cargo run -p xtask --locked -- smoke .artifacts/package/WhatsAppVideoPreparer-Windows-x64/WhatsAppVideoPreparer.exe
+
+      - name: Generate SPDX 2.3 SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
-          name: WhatsAppVideoPreparer-Windows
-          path: dist/WhatsAppVideoPreparer.exe
+          path: .
+          format: spdx-json
+          output-file: .artifacts/package/WhatsAppVideoPreparer-Windows-x64.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          syft-version: v1.52.0
+      - name: Attest build provenance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
+        with:
+          subject-checksums: .artifacts/package/WhatsAppVideoPreparer-Windows-x64/SHA256SUMS
+
+      - name: Attest SPDX SBOM
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/attest-sbom@4651f806c01d8637787e274ac3bdf724ef169f34 # v3.0.0
+        with:
+          subject-checksums: .artifacts/package/WhatsAppVideoPreparer-Windows-x64/SHA256SUMS
+          sbom-path: .artifacts/package/WhatsAppVideoPreparer-Windows-x64.spdx.json
+
+      - name: Upload qualified Windows bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: WhatsAppVideoPreparer-Windows-x64-${{ github.sha }}
+          path: |
+            .artifacts/package/WhatsAppVideoPreparer-Windows-x64/
+            .artifacts/package/WhatsAppVideoPreparer-Windows-x64.spdx.json
           if-no-files-found: error
+          retention-days: 14

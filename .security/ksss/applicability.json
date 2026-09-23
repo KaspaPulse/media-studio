@@ -1,0 +1,11 @@
+{
+  "schema": "wvp-ksss-applicability-v1",
+  "repository": "KaspaPulse/whatsapp-video-preparer",
+  "profile": "medium",
+  "required_layers": ["L0", "L1", "L2", "L3", "L4", "L5", "L7", "L8", "L9", "L10", "L11", "L14"],
+  "conditional_layers": ["L6", "L12", "L13"],
+  "not_applicable_reason": {
+    "production_runtime": "This repository publishes a local desktop application and owns no server production runtime."
+  },
+  "evidence_rule": "Reuse only while source, tree, dependencies, workflow, artifact, environment, and policy validity predicates still hold."
+}
