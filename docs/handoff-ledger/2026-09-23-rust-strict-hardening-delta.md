@@ -24,9 +24,13 @@ No advisory ignore was added. A scratch all-target graph established a stable
 same-version remediation: iced 0.14.0 with default features disabled and
 `tokio,image,tiny-skia` enabled.
 
-The final locked graph has no `lru`, `cryoglyph`, or `iced_wgpu`.
-`iced_tiny_skia 0.14.1` is present. Cargo.lock has zero new package identities
-and 105 removed identities relative to baseline.
+The qualified target-filtered dependency graphs for `x86_64-pc-windows-msvc`,
+`aarch64-apple-darwin`, and `x86_64-apple-darwin` have no reachable `lru`,
+`cryoglyph`, or `iced_wgpu`; `iced_tiny_skia 0.14.1` is present on each target.
+`Cargo.lock` may retain inactive optional package records for those crates. The
+lockfile has zero new package identities and 105 removed identities relative to
+baseline. Therefore `RUSTSEC-2026-0253` has no active path in the qualified
+Windows/macOS build graphs.
 
 ## Strict Rust workflow hardening
 - workflow YAML permits declarative orchestration and simple Rust tool invocations;

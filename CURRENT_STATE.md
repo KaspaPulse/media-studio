@@ -17,9 +17,9 @@ COMPLETED_AND_VERIFIED:
 - strict Rust repository/workflow gate PASS;
 - cargo-deny 0.20.2 advisories/licenses/bans/sources PASS;
 - advisory ignores = none;
-- RUSTSEC-2026-0253 path removed from locked graph;
-- lru / cryoglyph / iced_wgpu absent from locked all-target graph;
-- iced_tiny_skia 0.14.1 present;
+- RUSTSEC-2026-0253 active build path removed from the qualified target-filtered dependency graphs;
+- Cargo.lock may retain inactive optional package records for lru / cryoglyph / iced_wgpu;
+- x86_64-pc-windows-msvc, aarch64-apple-darwin, and x86_64-apple-darwin each have lru / cryoglyph / iced_wgpu unreachable and iced_tiny_skia 0.14.1 present;
 - lock identity delta: 579 -> 474 package identities, 0 new / 105 removed;
 - cargo check --workspace --all-targets --locked --offline PASS;
 - cargo clippy --workspace --all-targets --locked --offline -- -D warnings PASS;
