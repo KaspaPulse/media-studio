@@ -1,9 +1,20 @@
-name: Build macOS
+name: Rust macOS
 
 on:
+  pull_request:
+    branches: [main]
   push:
-    branches: [main, feature/macos-build]
+    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: rust-macos-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
 
 jobs:
   build:
@@ -12,51 +23,78 @@ jobs:
       matrix:
         include:
           - runner: macos-15
-            arch: arm64
+            helper_platform: macos-arm64
           - runner: macos-15-intel
-            arch: x64
+            helper_platform: macos-x64
     runs-on: ${{ matrix.runner }}
-    permissions:
-      contents: read
+    timeout-minutes: 90
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - name: Build, test, and package
-        run: ./build_macos.sh "${{ matrix.arch }}"
-      - name: Verify native app starts
-        shell: bash
+      - name: Checkout exact source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install pinned Rust toolchain
         run: |
-          set -euo pipefail
-          APP="dist/WhatsAppVideoPreparer.app"
-          BIN="$APP/Contents/MacOS/WhatsAppVideoPreparer"
-          test -d "$APP"
-          test -x "$BIN"
-          file "$BIN"
-          codesign --verify --deep --strict "$APP"
-          QT_QPA_PLATFORM=offscreen QT_DEBUG_PLUGINS=1 "$BIN" >/tmp/whatsapp-video-preparer-smoke.log 2>&1 &
-          pid=$!
-          sleep 8
-          if kill -0 "$pid" 2>/dev/null; then
-            kill "$pid"
-            wait "$pid" || true
-            echo "GUI process remained alive for 8 seconds"
-          else
-            set +e
-            wait "$pid"
-            code=$?
-            set -e
-            echo "GUI process exited early with code $code"
-            echo "--- smoke log ---"
-            cat /tmp/whatsapp-video-preparer-smoke.log || true
-            exit "$code"
-          fi
-      - name: Upload macOS package
-        uses: actions/upload-artifact@v4
+          rustup toolchain install 1.98.1 --profile minimal --component rustfmt,clippy
+          rustup default 1.98.1
+          rustc --version
+          cargo --version
+
+      - name: Repository and KSSS gate
+        run: cargo run -p xtask --locked -- verify
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+      - name: Rust tests
+        run: cargo test --workspace --all-targets --locked
+      - name: Build release executable
+        run: cargo build --release --locked -p whatsapp-video-preparer
+
+      - name: Package native app with pinned media helpers
+        run: cargo run -p xtask --locked -- package-macos "${{ matrix.helper_platform }}" target/release/whatsapp-video-preparer .artifacts/package
+
+      - name: Real size-budget regression test
+        env:
+          WVP_FFMPEG: .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}/WhatsAppVideoPreparer.app/Contents/Resources/ffmpeg
+          WVP_FFPROBE: .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}/WhatsAppVideoPreparer.app/Contents/Resources/ffprobe
+        run: cargo test --locked --test size_budget -- --ignored --nocapture
+
+      - name: Native GUI startup smoke
+        run: cargo run -p xtask --locked -- smoke .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}/WhatsAppVideoPreparer.app/Contents/MacOS/WhatsAppVideoPreparer
+
+      - name: Generate SPDX 2.3 SBOM
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
-          name: WhatsAppVideoPreparer-macOS-${{ matrix.arch }}
+          path: .
+          format: spdx-json
+          output-file: .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+          syft-version: v1.52.0
+      - name: Attest build provenance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/attest-build-provenance@977bb373ede98d70efdf65b84cb5f73e068dcc2a # v3.0.0
+        with:
+          subject-path: .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.dmg
+
+      - name: Attest SPDX SBOM
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/attest-sbom@4651f806c01d8637787e274ac3bdf724ef169f34 # v3.0.0
+        with:
+          subject-path: .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.dmg
+          sbom-path: .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.spdx.json
+
+      - name: Upload qualified macOS bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: WhatsAppVideoPreparer-${{ matrix.helper_platform }}-${{ github.sha }}
           path: |
-            dist/WhatsAppVideoPreparer-macOS-${{ matrix.arch }}.dmg
-            dist/WhatsAppVideoPreparer-macOS-${{ matrix.arch }}.dmg.sha256
+            .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.dmg
+            .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.dmg.sha256
+            .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.spdx.json
+            .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}/SHA256SUMS
           if-no-files-found: error
+          retention-days: 14

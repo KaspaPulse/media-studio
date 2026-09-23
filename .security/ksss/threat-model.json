@@ -1,0 +1,43 @@
+{
+  "version": "1.0.0",
+  "repository": "KaspaPulse/whatsapp-video-preparer",
+  "surfaces": [
+    "URL input and remote media acquisition",
+    "yt-dlp helper execution",
+    "FFprobe media inspection",
+    "FFmpeg transcoding",
+    "local output filesystem",
+    "desktop GUI and settings",
+    "release artifact and helper-tool supply chain"
+  ],
+  "assets": [
+    "downloaded source media",
+    "generated WhatsApp clips",
+    "user-selected output paths",
+    "application settings",
+    "packaged executable and release artifacts",
+    "external helper executables and their identities"
+  ],
+  "trust_boundaries": [
+    {
+      "from": "user URL input",
+      "to": "yt-dlp process",
+      "requirements": ["http/https validation", "structured argument arrays", "no shell command construction"]
+    },
+    {
+      "from": "downloaded media",
+      "to": "FFprobe/FFmpeg",
+      "requirements": ["bounded output directory", "explicit stream mapping", "actual post-encode size verification"]
+    },
+    {
+      "from": "application",
+      "to": "local filesystem",
+      "requirements": ["preserve original source", "dedicated per-job directories", "no destructive source mutation"]
+    },
+    {
+      "from": "source tree",
+      "to": "release artifact",
+      "requirements": ["locked dependencies", "exact source identity", "SBOM/provenance before release", "pinned external Actions"]
+    }
+  ]
+}

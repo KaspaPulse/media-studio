@@ -32,3 +32,33 @@ Use [repository adoption](docs/continuity/REPOSITORY_ADOPTION.md), [resume proce
 Persist material-operation intent before execution; verify and record outcomes immediately afterward. Recover unknown outcomes before retrying.
 Preserve local work, active task ownership, project-specific hosts, authorization limits and valid source-bound evidence.
 Validate NEXT ACTION, then continue authorized work rather than merely summarize. This policy grants no push, release or production authority.
+
+## Rust-only repository-owned implementation
+
+All repository-owned executable application code, automated tests, and build/governance
+tooling must be Rust. Shell and Python source files are forbidden. YAML, JSON, TOML,
+Markdown, and binary assets may be used only as configuration, policy, metadata, or assets.
+
+FFmpeg, FFprobe, and yt-dlp are external helper boundaries, not repository-owned code.
+Invoke them only with structured process APIs and argument arrays; never construct shell
+command strings from user input. Pin and verify helper identities for distributable artifacts.
+
+## WhatsApp byte-budget invariant
+
+The user-selected duration is a maximum, not permission to exceed the byte limit.
+Every generated MP4 must be measured after encoding. The default target is 9,500,000 bytes,
+strictly below the 10,000,000-byte hard limit. Oversized output must be re-encoded within
+a bounded retry policy or fail closed; never return an oversized clip as success.
+
+## KSSS v1.2.0 consumer boundary
+
+Read .security/ksss/README.md and use the pinned KSSS v1.2.0 identity there.
+Risk classification and audit profile are separate; a profile cannot weaken the risk floor.
+AI suspicion alone never blocks. Evidence reuse is allowed only while its validity predicates
+hold. KSSS adoption PASS is not application, artifact, release, or deployment PASS.
+
+## Durable local checkpointing
+
+Read docs/continuity/DURABLE_LOCAL_CHECKPOINTING.md for every new/resumed engineering session.
+After each meaningful state transition, persist and verify durable state before continuing.
+Do not depend on conversation memory or terminal scrollback for recovery.

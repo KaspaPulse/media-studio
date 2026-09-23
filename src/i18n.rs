@@ -1,0 +1,123 @@
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Language {
+    #[default]
+    Arabic,
+    English,
+}
+
+impl Language {
+    #[must_use]
+    pub const fn toggled(self) -> Self {
+        match self {
+            Self::Arabic => Self::English,
+            Self::English => Self::Arabic,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Strings {
+    pub title: &'static str,
+    pub subtitle: &'static str,
+    pub url: &'static str,
+    pub url_placeholder: &'static str,
+    pub output: &'static str,
+    pub browse: &'static str,
+    pub segment_duration: &'static str,
+    pub seconds: &'static str,
+    pub minutes: &'static str,
+    pub hours: &'static str,
+    pub prepare: &'static str,
+    pub open_folder: &'static str,
+    pub open_source: &'static str,
+    pub open_clip: &'static str,
+    pub ready: &'static str,
+    pub invalid_url: &'static str,
+    pub invalid_duration: &'static str,
+    pub done: &'static str,
+    pub error: &'static str,
+    pub language: &'static str,
+    pub stage_download: &'static str,
+    pub stage_convert: &'static str,
+    pub size_budget: &'static str,
+}
+
+pub static AR: Strings = Strings {
+    title: "مجهز فيديو واتساب",
+    subtitle: "تنزيل وتجهيز مقاطع متوافقة مع واتساب مع ضمان حجم آمن لكل ملف",
+    url: "رابط الفيديو",
+    url_placeholder: "ألصق رابط الفيديو هنا",
+    output: "مجلد الحفظ",
+    browse: "اختيار...",
+    segment_duration: "المدة القصوى لكل مقطع",
+    seconds: "ثانية",
+    minutes: "دقيقة",
+    hours: "ساعة",
+    prepare: "تحميل وتجهيز للواتساب",
+    open_folder: "فتح مجلد النتائج",
+    open_source: "فتح النسخة الأصلية",
+    open_clip: "فتح أول مقطع",
+    ready: "جاهز",
+    invalid_url: "أدخل رابطًا صحيحًا يبدأ بـ http:// أو https://",
+    invalid_duration: "أدخل مدة صحيحة أكبر من صفر.",
+    done: "اكتمل تجهيز الفيديو بنجاح.",
+    error: "حدث خطأ",
+    language: "English",
+    stage_download: "المرحلة 1/2 — التنزيل",
+    stage_convert: "المرحلة 2/2 — التحويل والتقسيم",
+    size_budget: "الحجم المستهدف لكل مقطع ≤ 9.5 MB (هامش أمان لحد 10 MB)",
+};
+
+pub static EN: Strings = Strings {
+    title: "WhatsApp Video Preparer",
+    subtitle: "Download and create WhatsApp-ready clips with a verified per-file size budget",
+    url: "Video URL",
+    url_placeholder: "Paste a video URL here",
+    output: "Output folder",
+    browse: "Browse...",
+    segment_duration: "Maximum clip duration",
+    seconds: "Seconds",
+    minutes: "Minutes",
+    hours: "Hours",
+    prepare: "Download and prepare for WhatsApp",
+    open_folder: "Open results folder",
+    open_source: "Open original",
+    open_clip: "Open first clip",
+    ready: "Ready",
+    invalid_url: "Enter a valid URL starting with http:// or https://",
+    invalid_duration: "Enter a valid duration greater than zero.",
+    done: "Video preparation completed successfully.",
+    error: "Error",
+    language: "العربية",
+    stage_download: "Stage 1/2 — Download",
+    stage_convert: "Stage 2/2 — Convert and split",
+    size_budget: "Target size per clip ≤ 9.5 MB (safety margin below the 10 MB limit)",
+};
+
+#[must_use]
+pub fn strings(language: Language) -> &'static Strings {
+    match language {
+        Language::Arabic => &AR,
+        Language::English => &EN,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn language_toggle_is_reversible() {
+        assert_eq!(Language::Arabic.toggled(), Language::English);
+        assert_eq!(Language::English.toggled(), Language::Arabic);
+    }
+
+    #[test]
+    fn both_languages_define_size_budget_copy() {
+        assert!(AR.size_budget.contains("9.5"));
+        assert!(EN.size_budget.contains("9.5"));
+    }
+}
