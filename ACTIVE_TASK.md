@@ -1,50 +1,60 @@
 # ACTIVE TASK
 
+## Task
+WVP_RUST_STRICT_HARDENING_DELTA
+
 ## Status
-RUST V2 MERGED TO MAIN — POST-MERGE ACTIONS BUDGET BLOCKED
+LOCAL HARDENING QUALIFIED â€” DURABLE STATE COMMITTED
 
 ## Objective
-Maintain the completed Rust v2 transformation, WhatsApp byte-budget guarantee,
-pinned KSSS v1.2.0 adoption, and interruption-safe continuity without replaying
-valid evidence.
+Strengthen the already-merged Rust v2 repository so repository-owned application,
+test, build, and validation logic remains Rust while GitHub workflow YAML is
+declarative orchestration only.
 
-## Merged implementation identity
-- Rust v2 merge SHA: feeb43230e688496888a843809333c41a119d35f
-- Rust v2 merge tree: 9f00816972fb68ebb68971b4aeb863916b4fb21d
-- Current main SHA: VERIFY DYNAMICALLY
-- PR #5: MERGED_SQUASH
-- PR exact head: 0bc8c1b6956eeef7bea1987f4bd6fddaa09186f9
-- PR exact-head tree: 9f00816972fb68ebb68971b4aeb863916b4fb21d
-- Candidate version: 2.0.0
+Do not redo the Rust v2 transformation or restore retired Python/PowerShell/shell
+source files.
 
-## Completed and verified
-- Repository-owned implementation/tests/build-governance tooling are Rust.
-- GitHub language accounting reports Rust only.
-- 9.5 MB target under the 10 MB hard limit is enforced post-encode.
-- Local Windows qualification passes.
-- PR exact-head Windows CI passes.
-- PR exact-head macOS x64 and arm64 CI passes.
-- KSSS v1.2.0 adoption/risk/applicability gate passes.
-- PR #5 is merged to main with the same exact qualified tree.
+## Current identities
+- Remote main observed before hardening: `5edda96a0a23b486ffbaa73b9c55ff46b6510418`
+- Rust v2 implementation merge: `feeb43230e688496888a843809333c41a119d35f`
+- Hardening branch: `feat/rust-strict-hardening-20260923`
+- Technical checkpoint: `db6685287424f9c27f434473609356523687c1d8`
+- Technical checkpoint tree: `7b168eb1fa2d5ec4848516bcea5c3ca55969ae00`
+- Application version: `2.0.0`
 
-## Current blocker
-Exact-main push runs did not start because GitHub reports:
-`The job was not started because an Actions budget is preventing further use.`
+## Completed and verified locally
+- Strict Rust-owned workflow validator: PASS.
+- Workflow inline PowerShell environment/path logic removed.
+- External GitHub Actions remain full-40-character-SHA pinned.
+- `actions/attest` v4.2.2 is pinned to `1e69f48acb82d1966a394da916b4c1698aa569d6`.
+- `cargo-deny` 0.20.2 policy covers advisories, licenses, bans, and sources.
+- No advisory IDs are ignored.
+- `RUSTSEC-2026-0253` dependency path was removed by selecting iced 0.14.0 tiny-skia instead of the default wgpu renderer.
+- Locked graph contains no `lru`, `cryoglyph`, or `iced_wgpu`; `iced_tiny_skia 0.14.1` is present.
+- Cargo.lock remediation is pruning-only: 0 new package identities, 105 removed.
+- Windows locked check, Clippy, workspace tests, release build, package hashes, real size-budget test, and native GUI smoke all PASS.
+- Product `src/*.rs`, tests, and `build.rs` were not changed by this delta.
 
-Affected only:
-- exact-main Actions rerun;
-- main-only build provenance attestation;
-- main-only SBOM attestation.
+## Not yet verified
+- Hardening branch publication: NOT_STARTED.
+- Hardening PR: NOT_STARTED.
+- New exact-head Windows CI: NOT_RUN.
+- New exact-head macOS arm64/x64 CI: NOT_RUN.
+- Main-only v4 provenance/SBOM attestations: NOT_RUN.
+- Private-repository attestation plan eligibility: NOT_VERIFIED.
+- Release/tag/deployment: NOT_STARTED.
 
-Do not classify those as PASS.
+The earlier GitHub Actions budget failures belong to the pre-hardening merged-main
+state. Do not assume they still block the new hardening head; re-observe GitHub at
+publication time.
 
 ## DO NOT REPEAT
-Do not rerun local build/tests/size/GUI qualification while source/toolchain/helper
-validity predicates remain unchanged.
-Do not recreate Python or legacy build scripts.
-Do not weaken CI/attestation gates to work around the Actions budget.
+Do not rerun the Rust v2 migration or unaffected algorithm qualification.
+Do not restore wgpu/cryoglyph/lru merely to preserve the old dependency graph.
+Do not add an advisory ignore for RUSTSEC-2026-0253.
+Do not weaken attestation or Rust-only controls to obtain a green result.
 
 ## NEXT SAFE ACTION
-When Actions budget is available again, rerun the existing main workflows once
-and verify their exact-main conclusions and attestations. No release, tag, or
-deployment is authorized or implied by this state record.
+If GitHub publication/integration is within the current owner authorization, re-observe
+remote main/open PRs, then publish the existing hardening branch without replaying
+valid local qualification. Exact new-head CI must qualify Windows and native macOS.
