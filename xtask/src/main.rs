@@ -16,6 +16,9 @@ const KSSS_RUNTIME_SHA256: &str =
     "38309d2ab8fa30096d99940f855e88173faa182e60db33f2a96b2d3408507430";
 const KSSS_RUNTIME_SEQUENCE: u64 = 2;
 const KSSS_TRUST_ROOT: &str = "ksss-trust-root-1";
+const ACTIONS_ATTEST_SHA: &str = "1e69f48acb82d1966a394da916b4c1698aa569d6";
+const CARGO_DENY_VERSION: &str = "0.20.2";
+const CARGO_DENY_ACTION_SHA: &str = "3c6349835b2b7b196a839186cb8b78e02f7b5f25";
 
 fn main() -> Result<()> {
     let mut args = env::args().skip(1);
@@ -32,6 +35,12 @@ fn main() -> Result<()> {
                 .next()
                 .context("fetch-helpers requires a destination directory")?;
             fetch_helpers(&platform, &destination)
+        }
+        Some("verify-size-budget-package") => {
+            let package = args
+                .next()
+                .context("verify-size-budget-package requires a package root")?;
+            verify_size_budget_package(&package)
         }
         Some("package-windows") => {
             let binary = args.next().context("package-windows requires a binary")?;
@@ -69,10 +78,14 @@ fn verify_repository() -> Result<()> {
     verify_size_budget(&root)?;
     verify_ksss(&root)?;
     verify_helper_manifest(&root)?;
+    verify_dependency_policy(&root)?;
     println!("WVP_REPOSITORY_GATE=PASS");
     println!("RUST_OWNED_IMPLEMENTATION=100_PERCENT");
     println!("KSSS_RELEASE={KSSS_RELEASE}");
     println!("WHATSAPP_SIZE_POLICY=PASS");
+    println!("WORKFLOW_DECLARATIVE_ORCHESTRATION_ONLY=PASS");
+    println!("RUST_ONLY_GATE=STRICT_PASS");
+    println!("CARGO_DENY_POLICY=PASS version={CARGO_DENY_VERSION}");
     Ok(())
 }
 
@@ -84,6 +97,8 @@ fn verify_required_files(root: &Path) -> Result<()> {
         "src/main.rs",
         "src/media.rs",
         "xtask/Cargo.toml",
+        "deny.toml",
+        ".github/workflows/rust-policy.yml",
         ".security/ksss/ksss-adoption.json",
         ".security/ksss/trust-policy.json",
         ".security/ksss/helper-supply-chain.json",
@@ -144,7 +159,7 @@ fn verify_rust_only(root: &Path) -> Result<()> {
         rust_files >= 9,
         "expected Rust application plus xtask sources"
     );
-    verify_workflows_are_python_free(root)?;
+    verify_workflows_are_declarative(root)?;
     Ok(())
 }
 fn walk_owned_files<F>(root: &Path, current: &Path, visitor: &mut F) -> Result<()>
@@ -172,8 +187,10 @@ where
     Ok(())
 }
 
-fn verify_workflows_are_python_free(root: &Path) -> Result<()> {
+fn verify_workflows_are_declarative(root: &Path) -> Result<()> {
     let workflows = root.join(".github/workflows");
+    let mut saw_attest = false;
+    let mut saw_cargo_deny = false;
     for entry in fs::read_dir(workflows)? {
         let path = entry?.path();
         if !path.is_file() {
@@ -181,22 +198,36 @@ fn verify_workflows_are_python_free(root: &Path) -> Result<()> {
         }
         let text = fs::read_to_string(&path)?;
         let lower = text.to_ascii_lowercase();
-        for forbidden in ["setup-python", "python ", "build.ps1", "build_macos.sh"] {
+        for forbidden in [
+            "setup-python",
+            "python ",
+            ".ps1",
+            "actions/attest-build-provenance@",
+            "actions/attest-sbom@",
+        ] {
             ensure!(
                 !lower.contains(forbidden),
-                "workflow {} still references {forbidden}",
+                "workflow {} still references forbidden surface {forbidden}",
                 path.display()
             );
         }
-        for line in text.lines() {
+        ensure!(
+            !lower.contains("shell:"),
+            "workflow {} must rely on runner defaults; explicit shell selectors are forbidden",
+            path.display()
+        );
+        let lines: Vec<_> = text.lines().collect();
+        verify_workflow_run_blocks(&path, &lines)?;
+        for line in &lines {
             let trimmed = line.trim_start_matches([' ', '-']).trim();
             let Some(spec) = trimmed.strip_prefix("uses:") else {
                 continue;
             };
             let spec = spec.trim();
-            if spec.starts_with("./") {
-                continue;
-            }
+            ensure!(
+                !spec.starts_with("./"),
+                "repository-local workflow actions are forbidden: {spec}"
+            );
             let (_, reference) = spec
                 .split_once('@')
                 .with_context(|| format!("workflow action is missing a ref: {spec}"))?;
@@ -205,10 +236,124 @@ fn verify_workflows_are_python_free(root: &Path) -> Result<()> {
                 reference.len() == 40 && reference.bytes().all(|byte| byte.is_ascii_hexdigit()),
                 "workflow action must use a full commit SHA: {spec}"
             );
+            if spec.starts_with("actions/attest@") {
+                ensure!(
+                    reference == ACTIONS_ATTEST_SHA,
+                    "actions/attest must be pinned to the approved v4.2.2 commit"
+                );
+                saw_attest = true;
+            }
+            if spec.starts_with("EmbarkStudios/cargo-deny-action@") {
+                ensure!(
+                    reference == CARGO_DENY_ACTION_SHA,
+                    "cargo-deny-action must be pinned to the approved v2.1.1 commit"
+                );
+                saw_cargo_deny = true;
+            }
         }
+    }
+    ensure!(saw_attest, "actions/attest v4.2.2 pin is required");
+    ensure!(saw_cargo_deny, "cargo-deny-action v2.1.1 pin is required");
+    Ok(())
+}
+
+fn verify_workflow_run_blocks(path: &Path, lines: &[&str]) -> Result<()> {
+    let mut index = 0_usize;
+    while index < lines.len() {
+        let line = lines[index];
+        let trimmed = line.trim_start();
+        let indent = line.len() - trimmed.len();
+        let Some(run) = trimmed.strip_prefix("run:") else {
+            index += 1;
+            continue;
+        };
+        let run = run.trim();
+        if matches!(run, "|" | "|-" | ">" | ">-") {
+            index += 1;
+            while index < lines.len() {
+                let nested = lines[index];
+                if nested.trim().is_empty() {
+                    index += 1;
+                    continue;
+                }
+                let nested_trimmed = nested.trim_start();
+                let nested_indent = nested.len() - nested_trimmed.len();
+                if nested_indent <= indent {
+                    break;
+                }
+                verify_workflow_command(path, nested_trimmed.trim())?;
+                index += 1;
+            }
+            continue;
+        }
+        verify_workflow_command(path, run)?;
+        index += 1;
     }
     Ok(())
 }
+
+fn verify_workflow_command(path: &Path, command: &str) -> Result<()> {
+    let sanitized = strip_github_expressions(command)?;
+    for forbidden in ["&&", "||", ";", "`", "$", "|", ">", "<", "="] {
+        ensure!(
+            !sanitized.contains(forbidden),
+            "workflow {} contains inline executable logic: {command}",
+            path.display()
+        );
+    }
+    ensure!(
+        ["cargo ", "rustup ", "rustc "]
+            .iter()
+            .any(|prefix| sanitized.starts_with(prefix)),
+        "workflow {} run command is not approved orchestration: {command}",
+        path.display()
+    );
+    Ok(())
+}
+
+fn strip_github_expressions(command: &str) -> Result<String> {
+    let mut output = String::new();
+    let mut rest = command;
+    while let Some(start) = rest.find("${{") {
+        output.push_str(&rest[..start]);
+        let expression = &rest[start + 3..];
+        let end = expression
+            .find("}}")
+            .context("unterminated GitHub expression in workflow run command")?;
+        output.push_str("GITHUB_EXPRESSION");
+        rest = &expression[end + 2..];
+    }
+    output.push_str(rest);
+    Ok(output)
+}
+
+fn verify_dependency_policy(root: &Path) -> Result<()> {
+    let policy = fs::read_to_string(root.join("deny.toml"))?;
+    for required in [
+        "x86_64-pc-windows-msvc",
+        "aarch64-apple-darwin",
+        "x86_64-apple-darwin",
+        "unknown-registry = \"deny\"",
+        "unknown-git = \"deny\"",
+        "yanked = \"deny\"",
+        "unmaintained = \"workspace\"",
+        "unsound = \"all\"",
+        "\"BSL-1.0\"",
+        "\"CC0-1.0\"",
+    ] {
+        ensure!(
+            policy.contains(required),
+            "deny.toml missing required policy: {required}"
+        );
+    }
+    let workflow = fs::read_to_string(root.join(".github/workflows/rust-policy.yml"))?;
+    ensure!(
+        workflow.contains("command-arguments: advisories licenses bans sources"),
+        "Rust policy workflow must execute all four cargo-deny checks"
+    );
+    Ok(())
+}
+
 fn verify_size_budget(root: &Path) -> Result<()> {
     let source = fs::read_to_string(root.join("src/media.rs"))?;
     let hard = parse_u64_const(&source, "WHATSAPP_LIMIT_BYTES")?;
@@ -247,6 +392,7 @@ fn verify_ksss(root: &Path) -> Result<()> {
     let adoption = read_json(&root.join(".security/ksss/ksss-adoption.json"))?;
     let trust = read_json(&root.join(".security/ksss/trust-policy.json"))?;
     let policy = read_json(&root.join(".security/ksss/repository-policy.json"))?;
+    let strengthening = read_json(&root.join(".security/ksss/local-strengthening.json"))?;
 
     expect_string(&adoption, "repository", REPOSITORY)?;
     expect_string(&adoption, "ksss_release", KSSS_RELEASE)?;
@@ -264,6 +410,58 @@ fn verify_ksss(root: &Path) -> Result<()> {
     ensure!(
         policy.pointer("/controls/risk_floor_enforcement") == Some(&Value::Bool(true)),
         "KSSS risk floor must remain enabled"
+    );
+    ensure!(
+        strengthening.pointer("/controls/WVP-RUST-002/workflow_orchestration_only")
+            == Some(&Value::Bool(true)),
+        "strict workflow orchestration control must remain enabled"
+    );
+    ensure!(
+        strengthening.pointer("/controls/WVP-RUST-002/external_actions_full_sha")
+            == Some(&Value::Bool(true)),
+        "external Actions must remain full-SHA pinned"
+    );
+    ensure!(
+        strengthening
+            .pointer("/controls/WVP-SUPPLY-001/cargo_deny_version")
+            .and_then(Value::as_str)
+            == Some(CARGO_DENY_VERSION),
+        "cargo-deny policy version mismatch"
+    );
+    ensure!(
+        strengthening
+            .pointer("/controls/WVP-SUPPLY-001/yanked")
+            .and_then(Value::as_str)
+            == Some("deny"),
+        "cargo-deny yanked policy must remain deny"
+    );
+    ensure!(
+        strengthening
+            .pointer("/controls/WVP-SUPPLY-001/unsound")
+            .and_then(Value::as_str)
+            == Some("all"),
+        "cargo-deny unsound policy must remain all"
+    );
+    ensure!(
+        strengthening
+            .pointer("/controls/WVP-SUPPLY-001/unmaintained")
+            .and_then(Value::as_str)
+            == Some("workspace"),
+        "cargo-deny unmaintained policy must remain workspace"
+    );
+    ensure!(
+        strengthening
+            .pointer("/controls/WVP-SUPPLY-001/advisory_ignores")
+            .and_then(Value::as_array)
+            .is_some_and(Vec::is_empty),
+        "cargo-deny advisory ignore list must remain empty"
+    );
+    ensure!(
+        strengthening
+            .pointer("/controls/WVP-ATTEST-001/action_sha")
+            .and_then(Value::as_str)
+            == Some(ACTIONS_ATTEST_SHA),
+        "actions/attest policy SHA mismatch"
     );
     verify_bound_digest(
         root,
@@ -534,6 +732,89 @@ fn resolve_repo_path(value: &str) -> PathBuf {
     } else {
         repo_root().join(path)
     }
+}
+
+fn verify_size_budget_package(package: &str) -> Result<()> {
+    let platform = current_platform()
+        .context("size-budget package verification requires a supported runner")?;
+    let package = resolve_repo_path(package);
+    ensure!(
+        package.is_dir(),
+        "package root missing: {}",
+        package.display()
+    );
+    let resources = if platform == "windows-x64" {
+        package.join("resources")
+    } else {
+        package.join("Contents/Resources")
+    };
+    verify_packaged_helpers(platform, &resources)?;
+    let ffmpeg = resources.join(if platform == "windows-x64" {
+        "ffmpeg.exe"
+    } else {
+        "ffmpeg"
+    });
+    let ffprobe = resources.join(if platform == "windows-x64" {
+        "ffprobe.exe"
+    } else {
+        "ffprobe"
+    });
+    let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let mut command = Command::new(cargo);
+    command
+        .current_dir(repo_root())
+        .args([
+            "test",
+            "--locked",
+            "--test",
+            "size_budget",
+            "--",
+            "--ignored",
+            "--nocapture",
+        ])
+        .env("WVP_FFMPEG", &ffmpeg)
+        .env("WVP_FFPROBE", &ffprobe);
+    run_checked(&mut command)?;
+    println!(
+        "SIZE_BUDGET_PACKAGE_TEST=PASS platform={platform} package={}",
+        package.display()
+    );
+    Ok(())
+}
+
+fn verify_packaged_helpers(platform: &str, resources: &Path) -> Result<()> {
+    ensure!(
+        resources.is_dir(),
+        "package resources missing: {}",
+        resources.display()
+    );
+    let manifest = read_json(&repo_root().join(".security/ksss/helper-supply-chain.json"))?;
+    let assets = manifest
+        .pointer(&format!("/platforms/{platform}"))
+        .and_then(Value::as_array)
+        .with_context(|| format!("unsupported helper platform: {platform}"))?;
+    for asset in assets {
+        let output = asset
+            .get("output_name")
+            .and_then(Value::as_str)
+            .context("helper output_name missing")?;
+        let expected = asset
+            .get("sha256")
+            .and_then(Value::as_str)
+            .context("helper sha256 missing")?;
+        let target = resources.join(output);
+        ensure!(
+            target.is_file(),
+            "packaged helper missing: {}",
+            target.display()
+        );
+        let actual = sha256_file(&target)?;
+        ensure!(
+            actual == expected,
+            "packaged helper digest mismatch for {output}: expected {expected}, actual {actual}"
+        );
+    }
+    Ok(())
 }
 
 fn package_windows(binary: &str, output: &str) -> Result<()> {

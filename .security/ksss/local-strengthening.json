@@ -13,6 +13,32 @@
     },
     "WVP-CONT-001": {
       "requirement": "Persist progress after every meaningful state transition and recover UNKNOWN outcomes before retry."
+    },
+    "WVP-RUST-002": {
+      "requirement": "Workflow YAML is declarative orchestration only; repository-owned build and validation logic remains Rust.",
+      "workflow_orchestration_only": true,
+      "inline_script_business_logic": "forbidden",
+      "external_actions_full_sha": true
+    },
+    "WVP-SUPPLY-001": {
+      "requirement": "Rust dependency policy is enforced with pinned cargo-deny across actual Windows and macOS targets.",
+      "cargo_deny_version": "0.20.2",
+      "checks": [
+        "advisories",
+        "licenses",
+        "bans",
+        "sources"
+      ],
+      "yanked": "deny",
+      "unsound": "all",
+      "unmaintained": "workspace",
+      "advisory_ignores": []
+    },
+    "WVP-ATTEST-001": {
+      "requirement": "Main-only provenance and SBOM attestations use full-SHA-pinned actions/attest v4; unsupported private-plan capability is classified, never faked.",
+      "action_version": "v4.2.2",
+      "action_sha": "1e69f48acb82d1966a394da916b4c1698aa569d6",
+      "private_repository_fail_closed": true
     }
   }
 }
