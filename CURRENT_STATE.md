@@ -1,7 +1,7 @@
 # CURRENT STATE
 
 TASK_ID: WVP_RUST_STRICT_HARDENING_DELTA
-STATUS: LOCAL_HARDENING_QUALIFIED / TECHNICAL_CHECKPOINT_COMMITTED
+STATUS: LOCAL_HARDENING_QUALIFIED / DURABLE_STATE_COMMITTED
 
 REPOSITORY: KaspaPulse/whatsapp-video-preparer
 HOST: Server
@@ -57,5 +57,6 @@ Do not repeat valid local qualification unless a relevant source, dependency,
 workflow, helper, toolchain, or environment predicate changes.
 
 NEXT_SAFE_ACTION:
-Finish documentation checkpoint, then re-observe GitHub before any authorized
-publication. Require exact new-head CI for the workflow/dependency delta.
+Re-observe GitHub before any authorized publication. If publication/integration is
+within authorization, push the existing branch and require exact new-head CI for the
+workflow/dependency delta.

@@ -121,7 +121,7 @@ Canonical operation journal:
 
 Do not repeat completed local qualification while its validity predicates hold.
 
-NEXT ACTION: finish the documentation checkpoint. If publication/integration is
-within the current owner authorization, re-observe remote main/open PRs and
-publish the existing checkpoint. Require exact new-head Windows/macOS/Rust Policy
-CI before integration. Do not release, tag, or deploy as part of this state.
+NEXT ACTION: if publication/integration is within the current owner authorization,
+re-observe remote main/open PRs and publish the existing branch. Require exact
+new-head Windows/macOS/Rust Policy CI before integration. Do not release, tag, or
+deploy as part of this state.

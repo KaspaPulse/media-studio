@@ -76,6 +76,6 @@ state is re-observed for this new head.
 Use the canonical operation journal at:
 `C:\WVP-Rust-Migration-20260923\OPERATION_JOURNAL.md`
 
-NEXT_SAFE_ACTION: finish the documentation checkpoint. If publication is within
-authorization, re-observe remote main/open PRs, then publish this existing
-qualified checkpoint and require exact new-head Windows/macOS/Rust Policy CI.
+NEXT_SAFE_ACTION: if publication is within authorization, re-observe remote
+main/open PRs, then publish this existing qualified branch and require exact
+new-head Windows/macOS/Rust Policy CI.

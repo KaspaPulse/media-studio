@@ -4,7 +4,7 @@
 WVP_RUST_STRICT_HARDENING_DELTA
 
 ## Status
-LOCAL HARDENING QUALIFIED â€” TECHNICAL CHECKPOINT COMMITTED
+LOCAL HARDENING QUALIFIED â€” DURABLE STATE COMMITTED
 
 ## Objective
 Strengthen the already-merged Rust v2 repository so repository-owned application,
@@ -55,7 +55,6 @@ Do not add an advisory ignore for RUSTSEC-2026-0253.
 Do not weaken attestation or Rust-only controls to obtain a green result.
 
 ## NEXT SAFE ACTION
-Review and commit the documentation/governance reconciliation. Then, only if GitHub
-publication/integration is within the current owner authorization, re-observe remote
-main/open PRs and publish the existing hardening checkpoint without replaying valid
-local qualification. Exact new-head CI must qualify Windows and native macOS.
+If GitHub publication/integration is within the current owner authorization, re-observe
+remote main/open PRs, then publish the existing hardening branch without replaying
+valid local qualification. Exact new-head CI must qualify Windows and native macOS.
