@@ -1,7 +1,7 @@
 # ACTIVE TASK
 
 ## Status
-LOCAL QUALIFICATION COMPLETE — CHECKPOINT COMMIT PENDING
+LOCAL QUALIFICATION COMPLETE — IMPLEMENTATION CHECKPOINT COMMITTED
 
 ## Objective
 Rebuild WhatsApp Video Preparer as a Rust-owned v2 application, enforce a real
@@ -14,6 +14,8 @@ preserve interruption-safe continuity.
 - Branch: wvp-rust-ksss-20260923
 - Baseline main: a605b3d30d6aed7304f9d9b617a31f86c00fb3da
 - Candidate version: 2.0.0
+- Qualified implementation commit: 28fa0cb980df6468a8bfe32c5b42994bdffffde5
+- Qualified implementation tree: 462730225a5138732f533aa26265ddb37399b2aa
 - Current HEAD: VERIFY DYNAMICALLY
 
 ## Verified progress
@@ -26,9 +28,10 @@ preserve interruption-safe continuity.
 - Windows/macOS CI workflows use full-SHA Actions, SBOM generation, and main-only attestations.
 
 ## Remaining
-Review and stage the intended candidate, run cached/staged consistency checks,
-then create the local checkpoint commit. GitHub publication/integration and
-macOS CI qualification remain separate NOT_STARTED/NOT_VERIFIED states.
+GitHub publication/integration, exact-head CI, and native macOS CI qualification
+remain separate NOT_STARTED/NOT_VERIFIED states. Re-observe remote state before
+any authorized publication mutation and reuse the local qualification while its
+validity predicates remain unchanged.
 
 ## DO NOT REPEAT
 Do not rerun the qualified product/build/size/smoke evidence unless its relevant

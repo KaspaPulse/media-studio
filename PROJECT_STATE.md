@@ -6,6 +6,8 @@ Default branch: `main`
 Active local branch: `wvp-rust-ksss-20260923`
 Baseline main observed: `a605b3d30d6aed7304f9d9b617a31f86c00fb3da`
 Candidate version: `2.0.0`
+Qualified implementation commit: `28fa0cb980df6468a8bfe32c5b42994bdffffde5`
+Qualified implementation tree: `462730225a5138732f533aa26265ddb37399b2aa`
 
 ## Current candidate
 
@@ -82,6 +84,7 @@ Canonical operation journal:
 Current Git HEAD must always be verified dynamically. The journal records
 operation receipts and the eventual local checkpoint commit identity.
 
-NEXT ACTION: complete staged-diff validation and create the local checkpoint
-commit. Any GitHub push/PR/merge/release remains a distinct external state and
-must follow the active authorization boundary and repository protections.
+NEXT ACTION: preserve the qualified implementation commit and proceed to
+GitHub publication/integration only when that external mutation is within the
+active authorization boundary. Before any push, re-observe remote `main`, open
+PRs, branch state, and rulesets; do not repeat still-valid local qualification.
