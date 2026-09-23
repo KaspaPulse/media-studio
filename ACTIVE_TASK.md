@@ -1,39 +1,50 @@
 # ACTIVE TASK
 
 ## Status
-LOCAL QUALIFICATION COMPLETE — IMPLEMENTATION CHECKPOINT COMMITTED
+RUST V2 MERGED TO MAIN — POST-MERGE ACTIONS BUDGET BLOCKED
 
 ## Objective
-Rebuild WhatsApp Video Preparer as a Rust-owned v2 application, enforce a real
-WhatsApp byte budget, bind repository governance to pinned KSSS v1.2.0, and
-preserve interruption-safe continuity.
+Maintain the completed Rust v2 transformation, WhatsApp byte-budget guarantee,
+pinned KSSS v1.2.0 adoption, and interruption-safe continuity without replaying
+valid evidence.
 
-## Current identity
-- Host: Server
-- Worktree: C:\WVP-Rust-Migration-20260923\repo
-- Branch: wvp-rust-ksss-20260923
-- Baseline main: a605b3d30d6aed7304f9d9b617a31f86c00fb3da
+## Merged implementation identity
+- Rust v2 merge SHA: feeb43230e688496888a843809333c41a119d35f
+- Rust v2 merge tree: 9f00816972fb68ebb68971b4aeb863916b4fb21d
+- Current main SHA: VERIFY DYNAMICALLY
+- PR #5: MERGED_SQUASH
+- PR exact head: 0bc8c1b6956eeef7bea1987f4bd6fddaa09186f9
+- PR exact-head tree: 9f00816972fb68ebb68971b4aeb863916b4fb21d
 - Candidate version: 2.0.0
-- Qualified implementation commit: 28fa0cb980df6468a8bfe32c5b42994bdffffde5
-- Qualified implementation tree: 462730225a5138732f533aa26265ddb37399b2aa
-- Current HEAD: VERIFY DYNAMICALLY
 
-## Verified progress
+## Completed and verified
 - Repository-owned implementation/tests/build-governance tooling are Rust.
-- 9.5 MB size target under the 10 MB hard limit is enforced after encoding.
-- Workspace fmt/clippy/tests and release build pass.
-- Real high-motion size-budget regression passes with packaged pinned helpers.
-- Final Windows package SHA256SUMS verifies 4/4 and packaged GUI smoke passes.
-- KSSS v1.2.0 identity/risk/applicability gate passes locally.
-- Windows/macOS CI workflows use full-SHA Actions, SBOM generation, and main-only attestations.
+- GitHub language accounting reports Rust only.
+- 9.5 MB target under the 10 MB hard limit is enforced post-encode.
+- Local Windows qualification passes.
+- PR exact-head Windows CI passes.
+- PR exact-head macOS x64 and arm64 CI passes.
+- KSSS v1.2.0 adoption/risk/applicability gate passes.
+- PR #5 is merged to main with the same exact qualified tree.
 
-## Remaining
-GitHub publication/integration, exact-head CI, and native macOS CI qualification
-remain separate NOT_STARTED/NOT_VERIFIED states. Re-observe remote state before
-any authorized publication mutation and reuse the local qualification while its
-validity predicates remain unchanged.
+## Current blocker
+Exact-main push runs did not start because GitHub reports:
+`The job was not started because an Actions budget is preventing further use.`
+
+Affected only:
+- exact-main Actions rerun;
+- main-only build provenance attestation;
+- main-only SBOM attestation.
+
+Do not classify those as PASS.
 
 ## DO NOT REPEAT
-Do not rerun the qualified product/build/size/smoke evidence unless its relevant
-source, toolchain, helper, workflow, artifact, or environment predicates change.
-Do not restore the retired Python implementation or legacy build scripts.
+Do not rerun local build/tests/size/GUI qualification while source/toolchain/helper
+validity predicates remain unchanged.
+Do not recreate Python or legacy build scripts.
+Do not weaken CI/attestation gates to work around the Actions budget.
+
+## NEXT SAFE ACTION
+When Actions budget is available again, rerun the existing main workflows once
+and verify their exact-main conclusions and attestations. No release, tag, or
+deployment is authorized or implied by this state record.

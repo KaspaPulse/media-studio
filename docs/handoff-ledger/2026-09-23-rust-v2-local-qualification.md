@@ -27,3 +27,25 @@ Status: LOCAL QUALIFICATION VERIFIED
 
 Durable command output is under `C:\WVP-Rust-Migration-20260923\`
 and operation state is in `OPERATION_JOURNAL.md`.
+
+## Post-merge reconciliation — 2026-09-23
+
+PR #5 was squash-merged.
+
+- Rust v2 implementation merge SHA: `feeb43230e688496888a843809333c41a119d35f`
+- Rust v2 implementation merge tree: `9f00816972fb68ebb68971b4aeb863916b4fb21d`
+- Current main SHA: verify dynamically after documentation-only reconciliation
+- PR exact head: `0bc8c1b6956eeef7bea1987f4bd6fddaa09186f9`
+- PR exact-head tree: `9f00816972fb68ebb68971b4aeb863916b4fb21d`
+- Windows PR CI `35896904411`: SUCCESS
+- macOS PR CI `35896904064`: SUCCESS on x64 and arm64
+- GitHub languages after merge: Rust only
+- forbidden tracked executable-code extensions: none
+
+Exact-main push runs were created but their jobs never acquired a runner.
+GitHub check annotations state exactly:
+`The job was not started because an Actions budget is preventing further use.`
+
+Therefore exact-main Actions and main-only attestations remain BLOCKED/NOT_RUN.
+The code transformation itself is merged and the merged tree is identical to
+the fully qualified PR tree. Do not weaken controls or replay valid local tests.

@@ -3,88 +3,116 @@
 Updated: 2026-09-23
 Repository: `KaspaPulse/whatsapp-video-preparer`
 Default branch: `main`
-Active local branch: `wvp-rust-ksss-20260923`
-Baseline main observed: `a605b3d30d6aed7304f9d9b617a31f86c00fb3da`
-Candidate version: `2.0.0`
-Qualified implementation commit: `28fa0cb980df6468a8bfe32c5b42994bdffffde5`
-Qualified implementation tree: `462730225a5138732f533aa26265ddb37399b2aa`
+Rust v2 PR: #5 — MERGED_SQUASH
 
-## Current candidate
+## Rust v2 implementation merge identity
 
-The repository-owned implementation has been rebuilt in Rust. The former
-Python/PySide6 application, Python tests, `pyproject.toml`, PowerShell build
-script, and Bash build script are retired from the candidate tree. External
-FFmpeg, FFprobe, and yt-dlp binaries remain explicit pinned helper boundaries.
+- Rust v2 merge SHA: `feeb43230e688496888a843809333c41a119d35f`
+- Rust v2 merge tree: `9f00816972fb68ebb68971b4aeb863916b4fb21d`
+- Current main SHA: VERIFY DYNAMICALLY; documentation-only reconciliation may advance commit identity without changing product/workflow bytes.
+- PR exact head: `0bc8c1b6956eeef7bea1987f4bd6fddaa09186f9`
+- PR exact-head tree: `9f00816972fb68ebb68971b4aeb863916b4fb21d`
+- Merge method: squash
+- Candidate/application version: `2.0.0`
 
-The WhatsApp defect root cause was duration-only segmentation without an
-enforced post-encode byte limit. v2 targets 9,500,000 bytes under a
-10,000,000-byte hard limit, measures each encoded file, and retries only an
-oversized clip with a lower bitrate.
-## Locally verified evidence
+The Rust v2 squash merge preserved the exact qualified candidate tree. The PR
+head and Rust v2 merge therefore differ by commit identity only, not repository
+tree bytes. Later documentation-only state reconciliation does not redefine this
+implementation identity.
 
-- Rust toolchain: 1.98.1.
-- Repository/KSSS Rust gate: PASS.
-- `cargo fmt --all -- --check`: PASS on final source after the last Rust edit.
-- `cargo clippy --workspace --all-targets --locked -- -D warnings`: PASS.
-- Workspace tests: 11 passed, 0 failed; real helper-dependent test ignored in
-  the ordinary suite by design.
-- Real high-motion size-budget integration test: PASS, 1 passed / 0 failed,
-  using the pinned packaged FFmpeg and FFprobe.
-- `cargo build --release --locked -p whatsapp-video-preparer`: PASS.
-- Windows final package: PASS; all four entries in `SHA256SUMS` independently
-  matched.
-- Packaged Windows GUI bounded startup smoke: PASS; the spawned GUI remained
-  alive for 6 seconds and only that captured PID was terminated.
-- Final Windows EXE SHA-256:
-  `5be021c19a3efb69045b0d04a56fb8e0584bd05996c2be32dabe9a8fa8cca6a1`.
-## Helper supply-chain identities
+## Rust-only repository-owned implementation
 
-Windows package helper SHA-256 values:
+The former Python application/tests, `pyproject.toml`, PowerShell build script,
+and Bash build script are absent from merged `main`.
 
-- FFmpeg: `4044b3924c977ad31229d504c5d5b8685f9553124fbaff6e9c99048b42830341`
-- FFprobe: `fc37ca23d31ee08bb8f7e108edf3822f6ef3efc1a8d306bbe0b779190230710b`
-- yt-dlp: `66674953fe251b89f4d08c5f0e35e0728679bd67ab3d7d05c0562af101dd3e7a`
+GitHub language accounting after merge reports only:
 
-The Rust `xtask` downloads to a process-specific partial path, syncs bytes,
-verifies SHA-256 before publication into the package, rejects mismatched
-existing helpers, sets executable permissions where required, and performs a
-version self-check.
+`Rust: 64492`
+
+A recursive tracked-tree scan found no repository-owned executable code files
+with Python, PowerShell, Bash/shell, JavaScript, or TypeScript extensions.
+
+FFmpeg, FFprobe, and yt-dlp remain explicit external helper boundaries whose
+release URLs and SHA-256 identities are pinned under `.security/ksss/`.
+
+## WhatsApp byte-budget fix
+
+The original defect was duration-only segmentation: a 29-second clip could still
+exceed WhatsApp's 10 MB acceptance limit.
+
+Rust v2 enforces:
+- hard limit: 10,000,000 bytes;
+- default target: 9,500,000 bytes;
+- actual post-encode file measurement;
+- bounded per-clip bitrate retry;
+- fail-closed behavior if a clip cannot satisfy the target.
+
+The real high-motion regression test exercises the production segmentation path.
+
+## Verified evidence
+
+Local Windows qualification before publication:
+- repository/KSSS gate PASS;
+- format PASS;
+- workspace Clippy with `-D warnings` PASS;
+- workspace unit tests: 11 passed, 0 failed;
+- real high-motion size-budget test: 1 passed, 0 failed;
+- locked release build PASS;
+- packaged Windows `SHA256SUMS`: 4/4 PASS;
+- packaged Windows GUI startup smoke PASS.
+
+PR exact-head GitHub CI on `0bc8c1b...`:
+- Rust Windows run `35896904411`: SUCCESS;
+- Rust macOS run `35896904064`: SUCCESS;
+- macOS x64: SUCCESS;
+- macOS arm64: SUCCESS.
+
+Those PR runs validated KSSS, format, Clippy, tests, release builds, pinned-helper
+packaging, real size-budget regression, native GUI startup smoke, SPDX SBOM, and
+artifact upload on their applicable platforms.
+
 ## KSSS binding
 
 Pinned KSSS identity:
+- release: `v1.2.0`;
+- source SHA: `967ed5068947a39961d5d5cc483ef65d25a61059`;
+- policy bundle: `3c1c8b449d736aba5fec5cffd688496b06d81f287f55fff4c3f42e36c3b58ec6`;
+- Consumer Runtime SHA-256: `38309d2ab8fa30096d99940f855e88173faa182e60db33f2a96b2d3408507430`;
+- runtime sequence: 2;
+- trust root: `ksss-trust-root-1`.
 
-- Release: `v1.2.0`
-- Source SHA: `967ed5068947a39961d5d5cc483ef65d25a61059`
-- Policy bundle:
-  `3c1c8b449d736aba5fec5cffd688496b06d81f287f55fff4c3f42e36c3b58ec6`
-- Consumer Runtime SHA-256:
-  `38309d2ab8fa30096d99940f855e88173faa182e60db33f2a96b2d3408507430`
-- Runtime sequence: 2
-- Trust root: `ksss-trust-root-1`
+## Exact-main Actions blocker
 
-The repository validates pinned adoption/risk/applicability identities locally
-with Rust. This is not a claim that KSSS cryptographic acquisition acceptance,
-GitHub CI, release publication, or production adoption has occurred.
-## Remote and platform status
+Automatic push-to-main runs were created for the merged SHA but no runner ever
+started:
 
-- GitHub candidate push: NOT_STARTED.
-- Pull request: NOT_STARTED.
-- Merge: NOT_STARTED.
-- Rust v2 GitHub Actions: NOT_RUN.
-- macOS v2 package/runtime qualification: NOT_VERIFIED; its workflow is defined
-  for native arm64 and x64 GitHub-hosted runners.
-- Rust v2 release: NOT_PUBLISHED.
-- Historical published release v1.4.1 remains unchanged.
+- Windows run `35900279813`: failure before job start;
+- macOS run `35900280102`: both jobs failed before job start.
+
+For all three jobs GitHub reports:
+- `runner_id=0`;
+- `steps=[]`;
+- annotation: `The job was not started because an Actions budget is preventing further use.`
+
+Classification:
+- merged Rust v2 repository state: VERIFIED_SUCCESS;
+- exact-main product rerun: BLOCKED_BY_GITHUB_ACTIONS_BUDGET before execution;
+- main-only provenance/SBOM attestations: NOT_RUN / BLOCKED_BY_GITHUB_ACTIONS_BUDGET;
+- release/tag/deployment: NOT_STARTED.
+
+This blocker is external to repository code. Do not weaken workflows or remove
+attestation gates to hide it.
 
 ## Continuity
 
-Canonical operation journal:
+Canonical local operation journal:
 `C:\WVP-Rust-Migration-20260923\OPERATION_JOURNAL.md`
 
-Current Git HEAD must always be verified dynamically. The journal records
-operation receipts and the eventual local checkpoint commit identity.
+Evidence reuse remains valid because the merged main tree exactly equals the
+successful PR exact-head tree. A commit-ID change alone does not invalidate
+tree-bound product evidence.
 
-NEXT ACTION: preserve the qualified implementation commit and proceed to
-GitHub publication/integration only when that external mutation is within the
-active authorization boundary. Before any push, re-observe remote `main`, open
-PRs, branch state, and rulesets; do not repeat still-valid local qualification.
+NEXT ACTION: after the GitHub Actions budget is resolved, rerun the existing
+exact-main Windows and macOS workflows once for the then-current documentation-only
+main state, verify main-only provenance/SBOM attestations, and close the blocker.
+Do not rebuild or retest locally unless a relevant validity predicate changes.
