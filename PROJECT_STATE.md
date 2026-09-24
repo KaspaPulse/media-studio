@@ -54,7 +54,7 @@ G7A_CHECKPOINT_SHA=`083da022e376174725b7420568d05fbdd4160358`
 G7B_CHECKPOINT_SHA=`6615a5021f670eda39fdf1a193c0f685a9ae743e`
 G7C_CHECKPOINT_SHA=`40a835142e0786c485b7926e5fa57ef0f52beba8`
 G7 now supports LocalFile and RemoteUrl UX, optional drag/drop with required file picker fallback, MediaProbe metadata display, ExportProfile selection, AppViewState-driven progress, responsive Compact/Standard/Wide layout, application-owned RTL/LTR visual ordering, System/Light/Dark theme preference, and keyboard/focus/testability wiring.
-Static and focused local qualification PASS; native keyboard/focus interaction remains NOT_VERIFIED until G8.
+Static and focused local qualification PASS. Windows native responsive/theme/semantic keyboard-focus interaction is now VERIFIED_SUCCESS under G8; screen-reader accessibility remains unclaimed.
 
 ## Current phase — G7R Identity Migration / Repository Rename
 Goal: migrate product/repository identity to KaspaPulse Media Studio / KaspaPulse/media-studio while preserving v2 history and user settings continuity.
@@ -105,6 +105,19 @@ Required:
 
 G8 must maximize local evidence before the first v3 push and must not publish v3.0.0.
 
+### G8 local candidate status
+LOCAL_SUCCESS=YES
+LOCAL_CANDIDATE=QUALIFIED
+KNOWN_LOCAL_BLOCKERS=NONE
+CODE_CANDIDATE_SHA=`7c287d23c9f5c319a99283ecf9604201342335ee`
+CODE_CANDIDATE_TREE=`fb05ac1ac6a621bdea4db1cd43e10b7780709629`
+WINDOWS_FINAL_PACKAGE_SHA256=`945c65c33ffa7bf65bf01956b7d7d996f58d7dccbc8736664fe5e4421e5659a6`
+
+Local/Windows qualification includes: LocalFile/RemoteUrl acquisition, packaged yt-dlp loopback, representative MP4/MKV/MOV/WebM inputs, remux/transcode, reused valid WhatsApp size-budget evidence, final Windows package/GUI smoke, Compact/Standard/Wide responsive RTL, System/Light/Dark themes, and Tab/ShiftTab/Space/Enter/Escape semantic focus.
+
+REMOTE_VALIDATION_REQUIRED=YES
+Remote-only/required gates: exact-head Rust Policy, Windows workflow, macOS x64/arm64 native build/package/harness, then exact-main provenance/SBOM after merge.
+
 ## Baselines
 GUI_FRAMEWORK=iced
 GUI_FRAMEWORK_BASELINE=0.14.0
@@ -123,4 +136,4 @@ Policies:
 `TEST_THE_AFFECTED_SURFACE / REUSE_VALID_EVIDENCE / RERUN_ONLY_WHEN_INVALIDATED / NO_FAKE_PASS`
 
 NEXT ACTION:
-Inventory G8 validity predicates and existing reusable evidence, then run only the missing local native/integration qualification before the first v3 candidate push.
+Push the single locally qualified v3 candidate branch once, require exact-head Rust Policy + Windows + macOS x64/arm64 validation, merge only after success, then verify exact-main provenance/SBOM before entering G9.

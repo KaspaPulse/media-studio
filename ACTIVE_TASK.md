@@ -18,6 +18,7 @@ G4_EXPORT_PROFILES=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 G5_PROCESSING_ENGINE_DECOUPLING=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 G6_UI_DESIGN_SYSTEM=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 G7_V3_MAIN_SCREEN=VERIFIED_SUCCESS_LOCAL_CHECKPOINTS
+G7_NATIVE_INTERACTION_QUALIFICATION=VERIFIED_SUCCESS_WINDOWS_NATIVE
 
 G7C checkpoint:
 `40a835142e0786c485b7926e5fa57ef0f52beba8`
@@ -52,8 +53,18 @@ Required:
 
 No v3 release tag/publication until G8 closes.
 
+## G8 local qualification
+LOCAL_SUCCESS=YES
+LOCAL_CANDIDATE=QUALIFIED
+KNOWN_LOCAL_BLOCKERS=NONE
+
+Verified/reused locally on Windows: Rust/KSSS/cargo-deny/Clippy/fmt gates; exact-code release/package/GUI smoke; LocalFile read-only; packaged yt-dlp RemoteUrl loopback; MP4/MKV/MOV/WebM; remux/transcode; WhatsApp size-budget evidence; Compact/Standard/Wide RTL UI; System/Light/Dark themes; Tab/ShiftTab/Space/Enter/Escape semantic focus.
+
+REMOTE_VALIDATION_REQUIRED=YES
+Required remotely: exact-head Rust Policy, Windows workflow, macOS x64/arm64 build/package/native harness; after merge, exact-main provenance and SPDX SBOM attestations.
+
 ## Do not repeat
 Do not replay G0-G7 qualification while relevant predicates remain unchanged.
 
 ## Next safe action
-Inventory G8 reusable evidence and missing validity predicates, run only missing local qualification, then push one fully qualified v3 candidate for required remote validation.
+Push the single locally qualified v3 candidate branch once. Use GitHub only for the required exact-head Windows/macOS/Rust Policy validation; do not start a push/fail/push development loop.
