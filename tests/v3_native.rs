@@ -102,8 +102,22 @@ impl LoopbackMediaServer {
             while !worker_shutdown.load(Ordering::Relaxed) {
                 match listener.accept() {
                     Ok((mut stream, _)) => {
+                        stream.set_nonblocking(false)?;
                         stream.set_read_timeout(Some(Duration::from_secs(2))).ok();
-                        serve_media_request(&mut stream, &media)?;
+                        if let Err(error) = serve_media_request(&mut stream, &media) {
+                            if matches!(
+                                error.kind(),
+                                std::io::ErrorKind::WouldBlock
+                                    | std::io::ErrorKind::TimedOut
+                                    | std::io::ErrorKind::BrokenPipe
+                                    | std::io::ErrorKind::ConnectionReset
+                                    | std::io::ErrorKind::ConnectionAborted
+                                    | std::io::ErrorKind::UnexpectedEof
+                            ) {
+                                continue;
+                            }
+                            return Err(error.into());
+                        }
                     }
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                         thread::sleep(Duration::from_millis(10));
@@ -134,7 +148,7 @@ impl LoopbackMediaServer {
     }
 }
 
-fn serve_media_request(stream: &mut TcpStream, media: &[u8]) -> Result<()> {
+fn serve_media_request(stream: &mut TcpStream, media: &[u8]) -> std::io::Result<()> {
     let mut request = [0_u8; 8192];
     let count = stream.read(&mut request)?;
     let request = String::from_utf8_lossy(&request[..count]);
