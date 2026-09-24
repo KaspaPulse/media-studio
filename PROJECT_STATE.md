@@ -5,7 +5,7 @@ Repository: `KaspaPulse/whatsapp-video-preparer`
 Visibility: PUBLIC
 Default branch: `main`
 Active task: `KASPAPULSE_MEDIA_STUDIO_V3`
-Current phase: `G6 — UI DESIGN SYSTEM`
+Current phase: `G7 — V3 MAIN SCREEN`
 
 ## Product boundary
 CURRENT_PRODUCT=WhatsApp Video Preparer
@@ -42,20 +42,27 @@ MediaProbe drives remux/transcode decisions; compatible general media can remux,
 Current v2 UI behavior is preserved by constructing a validated WhatsApp profile.
 Affected processing/media integration qualification PASS under OP-0099.
 
-## Current phase — G6 UI Design System
-Goal: establish the reusable Rust-owned UI foundation required before the v3 main screen.
+G6_UI_DESIGN_SYSTEM=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G6_CHECKPOINT_SHA=`6ab0f026a270f26e361b3b649b1321b00e74db53`
+Rust-owned UI foundations now provide logical direction/mirroring, BiDi isolation, semantic focus order, caller-tuned responsive layout classes, System/Light/Dark theme preference, and semantic design tokens.
+UI foundation tests: 13/13 PASS; lib check/Clippy and repository policy gate PASS under OP-0103/OP-0104.
+
+## Current phase — G7 V3 Main Screen
+Goal: replace the WhatsApp-only v2 screen with the general KaspaPulse Media Studio v3 UX while consuming the completed G1-G6 foundations.
 
 Required:
-- locale-aware logical layout primitives rather than ad-hoc RTL branches;
-- UiDirection / MirrorPolicy / semantic focus foundations from the frozen contract;
-- design tokens and semantic theme primitives;
-- System / Light / Dark theme preference architecture;
-- BiDi isolation helpers for mixed Arabic/technical values;
-- reusable direction-aware components where appropriate;
-- UI testability hooks/IDs where supported by the iced baseline;
-- preserve the current v2 screen behavior until G7 replaces the screen.
+- LocalFile and RemoteUrl source selection with non-drag file picker always available;
+- optional drag-and-drop source selection;
+- structured MediaProbe information surfaced before processing;
+- ExportProfile selection and output controls;
+- responsive Compact/Standard/Wide layout;
+- true application-owned RTL/LTR visual ordering with technical fields kept LTR;
+- System/Light/Dark theme wiring;
+- semantic focus/keyboard behavior and stable testable identities where supported;
+- progress/results/error states driven by AppViewState semantics;
+- no broad screen-reader accessibility claim.
 
-G6 must not implement the final v3 main screen, repository rename, or release identity migration.
+G7 must not rename the repository, rewrite v2 history, or publish v3.
 
 ## Baselines
 GUI_FRAMEWORK=iced
@@ -75,4 +82,4 @@ Policies:
 `TEST_THE_AFFECTED_SURFACE / REUSE_VALID_EVIDENCE / RERUN_ONLY_WHEN_INVALIDATED / NO_FAKE_PASS`
 
 NEXT ACTION:
-Read the frozen Foundation UI contracts, then implement and qualify the bounded G6 Rust UI design-system foundation without replacing the v2 main screen.
+Inspect iced 0.14.0 APIs used by the frozen contract, then implement G7 in bounded local slices: source/profile/state wiring, responsive RTL/theme layout, and keyboard/testability qualification.
