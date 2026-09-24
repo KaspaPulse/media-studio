@@ -55,6 +55,9 @@ jobs:
       - name: Package native app with pinned media helpers
         run: cargo run -p xtask --locked -- package-macos "${{ matrix.helper_platform }}" target/release/media-studio .artifacts/package
 
+      - name: V3 native media integration
+        run: cargo run -p xtask --locked -- verify-v3-package .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}/KaspaPulseMediaStudio.app
+
       - name: Real size-budget regression test
         run: cargo run -p xtask --locked -- verify-size-budget-package .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}/KaspaPulseMediaStudio.app
 

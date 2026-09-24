@@ -47,6 +47,9 @@ jobs:
       - name: Package with pinned media helpers
         run: cargo run -p xtask --locked -- package-windows target/release/media-studio.exe .artifacts/package/KaspaPulseMediaStudio-Windows-x64
 
+      - name: V3 native media integration
+        run: cargo run -p xtask --locked -- verify-v3-package .artifacts/package/KaspaPulseMediaStudio-Windows-x64
+
       - name: Real size-budget regression test
         run: cargo run -p xtask --locked -- verify-size-budget-package .artifacts/package/KaspaPulseMediaStudio-Windows-x64
 

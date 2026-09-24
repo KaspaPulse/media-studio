@@ -46,6 +46,12 @@ fn main() -> Result<()> {
                 .context("verify-size-budget-package requires a package root")?;
             verify_size_budget_package(&package)
         }
+        Some("verify-v3-package") => {
+            let package = args
+                .next()
+                .context("verify-v3-package requires a package root or app bundle")?;
+            verify_v3_package(&package)
+        }
         Some("package-windows") => {
             let binary = args.next().context("package-windows requires a binary")?;
             let output = args
@@ -100,6 +106,7 @@ fn verify_required_files(root: &Path) -> Result<()> {
         "rust-toolchain.toml",
         "src/main.rs",
         "src/media.rs",
+        "tests/v3_native.rs",
         "xtask/Cargo.toml",
         "deny.toml",
         ".github/workflows/rust-policy.yml",
@@ -737,6 +744,64 @@ fn resolve_repo_path(value: &str) -> PathBuf {
     } else {
         repo_root().join(path)
     }
+}
+
+fn verify_v3_package(package: &str) -> Result<()> {
+    let platform =
+        current_platform().context("v3 package verification requires a supported runner")?;
+    let package = resolve_repo_path(package);
+    ensure!(
+        package.is_dir(),
+        "v3 package root or app bundle missing: {}",
+        package.display()
+    );
+
+    let resources = if platform == "windows-x64" {
+        package.join("resources")
+    } else {
+        package.join("Contents/Resources")
+    };
+    verify_packaged_helpers(platform, &resources)?;
+
+    let ffmpeg = resources.join(if platform == "windows-x64" {
+        "ffmpeg.exe"
+    } else {
+        "ffmpeg"
+    });
+    let ffprobe = resources.join(if platform == "windows-x64" {
+        "ffprobe.exe"
+    } else {
+        "ffprobe"
+    });
+    let ytdlp = resources.join(if platform == "windows-x64" {
+        "yt-dlp.exe"
+    } else {
+        "yt-dlp"
+    });
+
+    let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let mut command = Command::new(cargo);
+    command
+        .current_dir(repo_root())
+        .args([
+            "test",
+            "--locked",
+            "--test",
+            "v3_native",
+            "--",
+            "--ignored",
+            "--nocapture",
+        ])
+        .env("MEDIA_STUDIO_FFMPEG", &ffmpeg)
+        .env("MEDIA_STUDIO_FFPROBE", &ffprobe)
+        .env("MEDIA_STUDIO_YTDLP", &ytdlp);
+    run_checked(&mut command)?;
+
+    println!(
+        "V3_NATIVE_PACKAGE_TEST=PASS platform={platform} package={}",
+        package.display()
+    );
+    Ok(())
 }
 
 fn verify_size_budget_package(package: &str) -> Result<()> {
