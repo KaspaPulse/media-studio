@@ -4,74 +4,71 @@
 
 KASPAPULSE_MEDIA_STUDIO_V3
 
-## Phase
-
-G0 — KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION_FREEZE
-
 ## Status
 
 IN_PROGRESS
 
+## Current phase
+
+G2 — SOURCE ACQUISITION
+
 ## Authorization
 
-The owner has granted continuous authorization for the v3 task through G0 → G9, including
-branches, source/tests/docs/governance edits, required Cargo changes, commits, push, PRs,
-CI, merges after gates, repository rename to `KaspaPulse/media-studio`, v3.0.0 tag and
-GitHub Release, release assets, checksums, SBOM/provenance verification, and durable
-state/checkpoints.
+Continuous owner authorization covers G0 → G9 for this task, including branches,
+source/tests/docs/governance changes, required Cargo changes, commits, push/PR/merge after
+gates, repository rename to `KaspaPulse/media-studio`, and v3.0.0 release publication.
 
-Out of scope:
+Excluded:
 - force push/history rewrite;
-- deletion or rewriting of v2 tags/releases/assets;
+- rewriting/deleting v2 tags/releases/assets;
 - credential rotation;
-- DNS changes;
-- unrelated production infrastructure;
+- DNS/unrelated infrastructure;
 - DRM circumvention;
 - unrelated repositories.
 
-## Source baseline
+## Completed and verified
 
-SOURCE_BASE_SHA:
-`2440690ecc1845b79de47550e672d767edbb9393`
+### G0 — Foundation Freeze
+PASS on exact main:
+`27c68ff509477d53e454a4f6f80b7eeffb8e7d15`
+tree:
+`2428660026f840f73631b8d0b31da32157038014`
 
-SOURCE_BASE_TREE:
-`b712b1da64b5de3739cc087292d1cb427621a931`
+### G1 — Product / Domain Model
+VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 
-CURRENT_PRODUCT:
-WhatsApp Video Preparer 2.0.0
+Commit:
+`6270f011ef293482063573bc5f97a2574b502f2a`
 
-TARGET_PRODUCT:
-KaspaPulse Media Studio 3.0.0
+Tree:
+`8d2c2652fe8c79ef7e3f62e82b85690e8bb2c62b`
 
-TARGET_REPOSITORY:
-`KaspaPulse/media-studio`
+Implemented ProductIdentity, InputSource, Locale, UiDirection, AppViewState,
+MirrorPolicy, and FocusPolicy foundations.
 
-## G0 objective
+Affected-surface qualification:
+fmt PASS; lib tests PASS; lib clippy -D warnings PASS; xtask verify PASS.
 
-Freeze a versioned documentation-only Foundation before any v3 implementation.
+## G2 objective
 
-Canonical document:
-`docs/foundation/KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION.md`
+Implement general source acquisition:
 
-Required G0 evidence:
-- Foundation document complete/versioned;
-- nine pillars defined;
-- architectural invariants defined;
-- required-vs-verified semantics defined;
-- v2 history preserved;
-- implementation source diff = 0;
-- dependency diff = 0;
-- workflow diff = 0;
-- v3 implementation remains NOT_STARTED.
+- LocalFile remains read-only and original is never overwritten/moved/deleted.
+- RemoteUrl uses the pinned yt-dlp helper.
+- yt-dlp external config is ignored.
+- plugin loading is disabled.
+- final downloaded path is reported explicitly and validated inside the job directory.
+- no newest-file guessing remains in the successful path.
+- no DRM circumvention.
+- support claim remains bounded to URLs handled by bundled yt-dlp.
+
+Do not implement the final v3 UI in G2.
 
 ## Do not repeat
 
-Do not rerun v2 Rust migration, build, packaging, GUI smoke, SBOM, provenance, or release
-qualification merely because v3 G0 exists. Reuse v2 evidence as historical evidence while
-its relevant predicates remain unchanged.
+Do not repeat G0 CI or G1 qualification unless a relevant validity predicate changes.
 
 ## Next safe action
 
-Verify the G0 documentation diff, commit only the four allowed paths, push and open the G0
-PR, verify exact-head required checks, merge without drift, verify exact-main, then continue
-to G1 automatically.
+Implement the smallest G2 Rust acquisition slice, write unit tests for argument/path
+invariants, and run affected-surface qualification only.
