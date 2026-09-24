@@ -53,22 +53,39 @@ pub enum SemanticColorRole {
 mod tests {
     use super::*;
 
+    fn strictly_increasing(values: &[f32]) -> bool {
+        values.windows(2).all(|pair| pair[0] < pair[1])
+    }
+
+    fn non_decreasing(values: &[f32]) -> bool {
+        values.windows(2).all(|pair| pair[0] <= pair[1])
+    }
+
     #[test]
     fn spacing_and_control_tokens_are_monotonic() {
-        assert!(Spacing::XS < Spacing::SM);
-        assert!(Spacing::SM < Spacing::MD);
-        assert!(Spacing::MD < Spacing::LG);
-        assert!(Spacing::LG < Spacing::XL);
-        assert!(Spacing::XL < Spacing::XXL);
+        let spacing = [
+            Spacing::XS,
+            Spacing::SM,
+            Spacing::MD,
+            Spacing::LG,
+            Spacing::XL,
+            Spacing::XXL,
+        ];
+        let controls = [ControlSize::ICON, ControlSize::FIELD, ControlSize::PRIMARY];
 
-        assert!(ControlSize::ICON <= ControlSize::FIELD);
-        assert!(ControlSize::FIELD <= ControlSize::PRIMARY);
+        assert!(strictly_increasing(&spacing));
+        assert!(non_decreasing(&controls));
     }
 
     #[test]
     fn typography_tokens_preserve_visual_hierarchy() {
-        assert!(Typography::CAPTION < Typography::BODY);
-        assert!(Typography::BODY < Typography::SECTION);
-        assert!(Typography::SECTION < Typography::TITLE);
+        let typography = [
+            Typography::CAPTION,
+            Typography::BODY,
+            Typography::SECTION,
+            Typography::TITLE,
+        ];
+
+        assert!(strictly_increasing(&typography));
     }
 }

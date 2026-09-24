@@ -39,13 +39,36 @@ impl ProcessingEngine {
         job: &Path,
         profile: &ExportProfile,
         tools: &Toolchain,
-        mut progress: F,
+        progress: F,
     ) -> Result<ProcessingResult>
     where
         F: FnMut(u8),
     {
         profile.validate()?;
         let metadata = MediaProbe::probe(source, &tools.ffprobe)?;
+        Self::process_with_metadata(source, job, profile, tools, &metadata, progress)
+    }
+
+    /// Processes an acquired media path using already-probed metadata.
+    ///
+    /// This entry point lets callers surface the exact metadata to the UI before processing
+    /// without forcing the processing engine to invoke `FFprobe` a second time.
+    ///
+    /// # Errors
+    /// Returns an error when profile validation, remux/transcode execution, or output verification
+    /// fails.
+    pub fn process_with_metadata<F>(
+        source: &Path,
+        job: &Path,
+        profile: &ExportProfile,
+        tools: &Toolchain,
+        metadata: &MediaMetadata,
+        mut progress: F,
+    ) -> Result<ProcessingResult>
+    where
+        F: FnMut(u8),
+    {
+        profile.validate()?;
         let clips_dir = job.join("clips");
         fs::create_dir_all(&clips_dir).with_context(|| {
             format!("failed to create output directory {}", clips_dir.display())
@@ -81,7 +104,7 @@ impl ProcessingEngine {
             .with_context(|| format!("failed to inspect media source {}", source.display()))?
             .len();
 
-        if can_remux(&metadata, profile, source_size) {
+        if can_remux(metadata, profile, source_size) {
             let output = clips_dir.join("status_000.mp4");
             progress(0);
             remux_clip(source, &output, profile, tools)?;

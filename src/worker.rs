@@ -2,6 +2,7 @@ use crate::acquisition::acquire_source;
 use crate::domain::InputSource;
 use crate::export_profile::ExportProfile;
 use crate::media::{Toolchain, make_job_dir};
+use crate::media_probe::{MediaMetadata, MediaProbe};
 use crate::processing::ProcessingEngine;
 use anyhow::Result;
 use std::path::PathBuf;
@@ -21,9 +22,15 @@ pub enum WorkerEvent {
         percent: u8,
         detail: String,
     },
+    ProbingStarted,
+    SourceProbed {
+        metadata: MediaMetadata,
+    },
+    ProcessingStarted,
     ConvertProgress {
         percent: u8,
     },
+    Finalizing,
     Completed {
         job: PathBuf,
         count: usize,
@@ -35,6 +42,18 @@ pub enum WorkerEvent {
     Failed(String),
 }
 
+#[derive(Debug, Clone)]
+pub enum ProbeEvent {
+    Completed {
+        source: PathBuf,
+        metadata: MediaMetadata,
+    },
+    Failed {
+        source: PathBuf,
+        detail: String,
+    },
+}
+
 #[must_use]
 pub fn spawn(request: PrepareRequest) -> Receiver<WorkerEvent> {
     let (sender, receiver) = mpsc::channel();
@@ -42,6 +61,25 @@ pub fn spawn(request: PrepareRequest) -> Receiver<WorkerEvent> {
         if let Err(error) = run(&request, &sender) {
             let _ = sender.send(WorkerEvent::Failed(format!("{error:#}")));
         }
+    });
+    receiver
+}
+
+#[must_use]
+pub fn spawn_local_probe(source: PathBuf) -> Receiver<ProbeEvent> {
+    let (sender, receiver) = mpsc::channel();
+    thread::spawn(move || {
+        let result =
+            Toolchain::discover().and_then(|tools| MediaProbe::probe(&source, &tools.ffprobe));
+
+        let event = match result {
+            Ok(metadata) => ProbeEvent::Completed { source, metadata },
+            Err(error) => ProbeEvent::Failed {
+                source,
+                detail: format!("{error:#}"),
+            },
+        };
+        let _ = sender.send(event);
     });
     receiver
 }
@@ -56,9 +94,25 @@ fn run(request: &PrepareRequest, sender: &Sender<WorkerEvent>) -> Result<()> {
     })?
     .into_path();
 
-    let result = ProcessingEngine::process(&source, &job, &request.profile, &tools, |percent| {
-        let _ = sender.send(WorkerEvent::ConvertProgress { percent });
+    sender.send(WorkerEvent::ProbingStarted)?;
+    let metadata = MediaProbe::probe(&source, &tools.ffprobe)?;
+    sender.send(WorkerEvent::SourceProbed {
+        metadata: metadata.clone(),
     })?;
+
+    sender.send(WorkerEvent::ProcessingStarted)?;
+    let result = ProcessingEngine::process_with_metadata(
+        &source,
+        &job,
+        &request.profile,
+        &tools,
+        &metadata,
+        |percent| {
+            let _ = sender.send(WorkerEvent::ConvertProgress { percent });
+        },
+    )?;
+
+    sender.send(WorkerEvent::Finalizing)?;
 
     let first_clip = result
         .outputs
