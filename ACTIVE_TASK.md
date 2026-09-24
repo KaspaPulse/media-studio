@@ -1,74 +1,45 @@
 # ACTIVE TASK
 
 ## Task
-
 KASPAPULSE_MEDIA_STUDIO_V3
 
 ## Status
-
 IN_PROGRESS
 
 ## Current phase
-
-G2 — SOURCE ACQUISITION
+G3 — MEDIA PROBE
 
 ## Authorization
+Continuous owner authorization covers G0 → G9 for this task.
+Force-push/history rewrite, rewriting v2 history, credential/DNS/unrelated infrastructure
+changes, DRM circumvention, and unrelated repositories remain out of scope.
 
-Continuous owner authorization covers G0 → G9 for this task, including branches,
-source/tests/docs/governance changes, required Cargo changes, commits, push/PR/merge after
-gates, repository rename to `KaspaPulse/media-studio`, and v3.0.0 release publication.
+## Completed
+G0_FOUNDATION_FREEZE=PASS
+G1_PRODUCT_DOMAIN_MODEL=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G2_SOURCE_ACQUISITION=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 
-Excluded:
-- force push/history rewrite;
-- rewriting/deleting v2 tags/releases/assets;
-- credential rotation;
-- DNS/unrelated infrastructure;
-- DRM circumvention;
-- unrelated repositories.
-
-## Completed and verified
-
-### G0 — Foundation Freeze
-PASS on exact main:
-`27c68ff509477d53e454a4f6f80b7eeffb8e7d15`
-tree:
-`2428660026f840f73631b8d0b31da32157038014`
-
-### G1 — Product / Domain Model
-VERIFIED_SUCCESS_LOCAL_CHECKPOINT
-
-Commit:
+G1 checkpoint:
 `6270f011ef293482063573bc5f97a2574b502f2a`
 
-Tree:
-`8d2c2652fe8c79ef7e3f62e82b85690e8bb2c62b`
+G2 checkpoint:
+`59540f352f1f66f5dd07a79d52c0ab5a74015888`
 
-Implemented ProductIdentity, InputSource, Locale, UiDirection, AppViewState,
-MirrorPolicy, and FocusPolicy foundations.
+## G3 objective
+Implement a structured Rust MediaProbe using FFprobe JSON.
+Do not use file-extension allowlists as the capability boundary.
+Capture container/duration/stream/codec/dimension/frame-rate/pixel-format/orientation and
+relevant color/HDR metadata where present.
 
-Affected-surface qualification:
-fmt PASS; lib tests PASS; lib clippy -D warnings PASS; xtask verify PASS.
-
-## G2 objective
-
-Implement general source acquisition:
-
-- LocalFile remains read-only and original is never overwritten/moved/deleted.
-- RemoteUrl uses the pinned yt-dlp helper.
-- yt-dlp external config is ignored.
-- plugin loading is disabled.
-- final downloaded path is reported explicitly and validated inside the job directory.
-- no newest-file guessing remains in the successful path.
-- no DRM circumvention.
-- support claim remains bounded to URLs handled by bundled yt-dlp.
-
-Do not implement the final v3 UI in G2.
+The probe must:
+- invoke FFprobe through structured Command arguments;
+- preserve Windows no-console behavior;
+- parse unknown future fields safely;
+- fail closed on FFprobe failure or unusable metadata;
+- remain independent of export-profile and UI concerns.
 
 ## Do not repeat
-
-Do not repeat G0 CI or G1 qualification unless a relevant validity predicate changes.
+Do not repeat G0/G1/G2 qualification unless relevant predicates change.
 
 ## Next safe action
-
-Implement the smallest G2 Rust acquisition slice, write unit tests for argument/path
-invariants, and run affected-surface qualification only.
+Implement MediaProbe and focused unit tests, then run affected-surface Rust qualification only.
