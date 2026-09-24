@@ -5,7 +5,7 @@ Repository: `KaspaPulse/whatsapp-video-preparer`
 Visibility: PUBLIC
 Default branch: `main`
 Active task: `KASPAPULSE_MEDIA_STUDIO_V3`
-Current phase: `G7R — IDENTITY MIGRATION / REPOSITORY RENAME`
+Current phase: `G7R-B — GITHUB REPOSITORY RENAME`
 
 ## Product boundary
 CURRENT_PRODUCT=WhatsApp Video Preparer
@@ -13,7 +13,7 @@ CURRENT_VERSION=2.0.0
 TARGET_PRODUCT=KaspaPulse Media Studio
 TARGET_VERSION=3.0.0
 TARGET_REPOSITORY=KaspaPulse/media-studio
-REPOSITORY_RENAME_STATUS=DEFERRED
+REPOSITORY_RENAME_STATUS=READY_FOR_AUTHORIZED_GITHUB_RENAME
 V2_HISTORICAL_BOUNDARY=IMMUTABLE
 
 ## Completed and verified
@@ -66,7 +66,23 @@ Required:
 - perform GitHub repository rename only after local identity delta is qualified;
 - verify old repository URL redirects and historical release access after rename.
 
-G7R must not publish v3.0.0 or rewrite historical v2 artifacts.
+G7R_A_LOCAL_IDENTITY_MIGRATION=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G7R_A_CHECKPOINT_SHA=`dbcab7807540feb6a70fd6106dca261d3d237bfc`
+G7R_A_CHECKPOINT_TREE=`7b8ea8fcd5aa0127a9c026f04ec7adc94656b2bf`
+Windows v3 release/package identity and packaged GUI smoke PASS; macOS native package identity remains REMOTE_VALIDATION_REQUIRED.
+
+## Current phase — G7R-B GitHub Repository Rename
+Goal: rename the GitHub repository from `KaspaPulse/whatsapp-video-preparer` to `KaspaPulse/media-studio`, update the local origin URL, and verify redirects/history without changing source bytes.
+
+Required:
+- fresh-read remote main and open PRs before rename;
+- rename only if remote main remains the G0-qualified baseline and no conflicting PR exists;
+- update local origin to the new canonical URL after GitHub confirms rename;
+- verify old repository URL redirects;
+- verify v2.0.0 tag/release/assets remain reachable and unchanged;
+- do not push the 17-commit v3 candidate until rename verification completes.
+
+G7R-B must not publish v3.0.0 or rewrite historical v2 artifacts.
 
 ## Baselines
 GUI_FRAMEWORK=iced
@@ -86,4 +102,4 @@ Policies:
 `TEST_THE_AFFECTED_SURFACE / REUSE_VALID_EVIDENCE / RERUN_ONLY_WHEN_INVALIDATED / NO_FAKE_PASS`
 
 NEXT ACTION:
-Inventory all product/repository identity surfaces, then implement and locally qualify the bounded G7R identity migration before any GitHub repository rename.
+Fresh-read GitHub repository/main/open PRs, then perform the authorized repository rename to KaspaPulse/media-studio, update local origin, and verify redirects/v2 history before the first v3 push.

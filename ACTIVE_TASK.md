@@ -7,7 +7,7 @@ KASPAPULSE_MEDIA_STUDIO_V3
 IN_PROGRESS
 
 ## Current phase
-G7R — IDENTITY MIGRATION / REPOSITORY RENAME
+G7R-B — GITHUB REPOSITORY RENAME
 
 ## Completed
 G0_FOUNDATION_FREEZE=PASS
@@ -33,10 +33,15 @@ Required decisions:
 - locally qualify the identity delta before GitHub repository rename;
 - after authorized rename, verify redirects and historical release access.
 
+G7R-A local identity migration is qualified at `dbcab7807540feb6a70fd6106dca261d3d237bfc` / tree `7b8ea8fcd5aa0127a9c026f04ec7adc94656b2bf`.
+
+## G7R-B objective
+Perform only the authorized GitHub repository rename to `KaspaPulse/media-studio`, update the local origin remote, and verify redirects plus immutable v2 history before any v3 candidate push.
+
 No v3 release tag/publication in this phase.
 
 ## Do not repeat
 Do not replay G0-G7 qualification while relevant predicates remain unchanged.
 
 ## Next safe action
-Inventory every identity surface, implement the bounded local G7R migration, and qualify it before any GitHub repository rename or push.
+Fresh-read remote main/open PRs/repository identity, then execute the authorized GitHub rename and verify local origin, redirects, and v2.0.0 history before pushing the qualified v3 candidate.
