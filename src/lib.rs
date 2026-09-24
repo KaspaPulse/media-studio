@@ -1,3 +1,4 @@
+pub mod acquisition;
 pub mod domain;
 pub mod downloader;
 pub mod i18n;

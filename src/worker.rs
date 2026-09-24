@@ -1,13 +1,14 @@
-use crate::downloader::download_source;
-use crate::media::{Toolchain, create_segments, is_valid_url, make_job_dir};
-use anyhow::{Result, bail};
+use crate::acquisition::acquire_source;
+use crate::domain::InputSource;
+use crate::media::{Toolchain, create_segments, make_job_dir};
+use anyhow::Result;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread;
 
 #[derive(Debug, Clone)]
 pub struct PrepareRequest {
-    pub url: String,
+    pub source: InputSource,
     pub output_root: PathBuf,
     pub requested_segment_seconds: f64,
     pub target_bytes: u64,
@@ -15,7 +16,7 @@ pub struct PrepareRequest {
 
 #[derive(Debug, Clone)]
 pub enum WorkerEvent {
-    DownloadProgress {
+    AcquisitionProgress {
         percent: u8,
         detail: String,
     },
@@ -43,19 +44,18 @@ pub fn spawn(request: PrepareRequest) -> Receiver<WorkerEvent> {
     });
     receiver
 }
+
 fn run(request: &PrepareRequest, sender: &Sender<WorkerEvent>) -> Result<()> {
-    if !is_valid_url(&request.url) {
-        bail!("invalid http/https video URL");
-    }
     if !request.requested_segment_seconds.is_finite() || request.requested_segment_seconds <= 0.0 {
-        bail!("segment duration must be greater than zero");
+        anyhow::bail!("segment duration must be greater than zero");
     }
 
     let tools = Toolchain::discover()?;
     let job = make_job_dir(&request.output_root)?;
-    let source = download_source(&request.url, &job, &tools, |percent, detail| {
-        let _ = sender.send(WorkerEvent::DownloadProgress { percent, detail });
-    })?;
+    let source = acquire_source(&request.source, &job, &tools, |percent, detail| {
+        let _ = sender.send(WorkerEvent::AcquisitionProgress { percent, detail });
+    })?
+    .into_path();
 
     let result = create_segments(
         &source,
@@ -88,17 +88,31 @@ fn run(request: &PrepareRequest, sender: &Sender<WorkerEvent>) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::InputSourceKind;
     use crate::media::DEFAULT_TARGET_BYTES;
+    use url::Url;
 
     #[test]
-    fn prepare_request_can_represent_default_policy() {
+    fn prepare_request_can_represent_default_remote_policy() {
         let request = PrepareRequest {
-            url: "https://example.com/video".to_owned(),
+            source: InputSource::remote(Url::parse("https://example.com/video").unwrap()),
             output_root: PathBuf::from("."),
             requested_segment_seconds: 29.0,
             target_bytes: DEFAULT_TARGET_BYTES,
         };
+        assert_eq!(request.source.kind(), InputSourceKind::RemoteUrl);
         assert_eq!(request.target_bytes, 9_500_000);
         assert!((request.requested_segment_seconds - 29.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn prepare_request_can_represent_local_source() {
+        let request = PrepareRequest {
+            source: InputSource::local("video.mkv"),
+            output_root: PathBuf::from("."),
+            requested_segment_seconds: 29.0,
+            target_bytes: DEFAULT_TARGET_BYTES,
+        };
+        assert_eq!(request.source.kind(), InputSourceKind::LocalFile);
     }
 }

@@ -7,6 +7,7 @@ use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
+use whatsapp_video_preparer::domain::InputSource;
 use whatsapp_video_preparer::i18n::{Language, strings};
 use whatsapp_video_preparer::media::{
     DEFAULT_SEGMENT_SECONDS, DEFAULT_TARGET_BYTES, duration_to_seconds, is_valid_url,
@@ -170,8 +171,13 @@ fn prepare(app: &mut App) {
     app.last_folder = None;
     app.last_source = None;
     app.last_clip = None;
+    let Ok(source_url) = url::Url::parse(app.url.trim()) else {
+        t.invalid_url.clone_into(&mut app.status);
+        app.busy = false;
+        return;
+    };
     app.worker = Some(spawn(PrepareRequest {
-        url: app.url.trim().to_owned(),
+        source: InputSource::remote(source_url),
         output_root,
         requested_segment_seconds: seconds,
         target_bytes: DEFAULT_TARGET_BYTES,
@@ -217,7 +223,7 @@ fn poll_worker(app: &mut App) {
 fn apply_worker_event(app: &mut App, event: WorkerEvent) {
     let t = strings(app.language);
     match event {
-        WorkerEvent::DownloadProgress { percent, detail } => {
+        WorkerEvent::AcquisitionProgress { percent, detail } => {
             app.progress = f32::from(percent);
             app.status = if detail.is_empty() {
                 format!("{}: {percent}%", t.stage_download)
