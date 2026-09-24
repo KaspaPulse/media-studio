@@ -7,4 +7,5 @@ pub mod media;
 pub mod media_probe;
 pub mod processing;
 pub mod settings;
+pub mod ui;
 pub mod worker;
