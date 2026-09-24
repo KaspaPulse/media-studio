@@ -8,6 +8,7 @@ use std::str::FromStr;
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
 use whatsapp_video_preparer::domain::InputSource;
+use whatsapp_video_preparer::export_profile::ExportProfile;
 use whatsapp_video_preparer::i18n::{Language, strings};
 use whatsapp_video_preparer::media::{
     DEFAULT_SEGMENT_SECONDS, DEFAULT_TARGET_BYTES, duration_to_seconds, is_valid_url,
@@ -176,11 +177,15 @@ fn prepare(app: &mut App) {
         app.busy = false;
         return;
     };
+    let Ok(profile) = ExportProfile::whatsapp(seconds, DEFAULT_TARGET_BYTES) else {
+        t.invalid_duration.clone_into(&mut app.status);
+        app.busy = false;
+        return;
+    };
     app.worker = Some(spawn(PrepareRequest {
         source: InputSource::remote(source_url),
         output_root,
-        requested_segment_seconds: seconds,
-        target_bytes: DEFAULT_TARGET_BYTES,
+        profile,
     }));
 }
 

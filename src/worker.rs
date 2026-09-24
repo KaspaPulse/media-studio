@@ -1,6 +1,8 @@
 use crate::acquisition::acquire_source;
 use crate::domain::InputSource;
-use crate::media::{Toolchain, create_segments, make_job_dir};
+use crate::export_profile::ExportProfile;
+use crate::media::{Toolchain, make_job_dir};
+use crate::processing::ProcessingEngine;
 use anyhow::Result;
 use std::path::PathBuf;
 use std::sync::mpsc::{self, Receiver, Sender};
@@ -10,8 +12,7 @@ use std::thread;
 pub struct PrepareRequest {
     pub source: InputSource,
     pub output_root: PathBuf,
-    pub requested_segment_seconds: f64,
-    pub target_bytes: u64,
+    pub profile: ExportProfile,
 }
 
 #[derive(Debug, Clone)]
@@ -46,9 +47,7 @@ pub fn spawn(request: PrepareRequest) -> Receiver<WorkerEvent> {
 }
 
 fn run(request: &PrepareRequest, sender: &Sender<WorkerEvent>) -> Result<()> {
-    if !request.requested_segment_seconds.is_finite() || request.requested_segment_seconds <= 0.0 {
-        anyhow::bail!("segment duration must be greater than zero");
-    }
+    request.profile.validate()?;
 
     let tools = Toolchain::discover()?;
     let job = make_job_dir(&request.output_root)?;
@@ -57,30 +56,23 @@ fn run(request: &PrepareRequest, sender: &Sender<WorkerEvent>) -> Result<()> {
     })?
     .into_path();
 
-    let result = create_segments(
-        &source,
-        &job,
-        request.requested_segment_seconds,
-        request.target_bytes,
-        &tools,
-        |percent| {
-            let _ = sender.send(WorkerEvent::ConvertProgress { percent });
-        },
-    )?;
+    let result = ProcessingEngine::process(&source, &job, &request.profile, &tools, |percent| {
+        let _ = sender.send(WorkerEvent::ConvertProgress { percent });
+    })?;
 
     let first_clip = result
-        .clips
+        .outputs
         .first()
         .cloned()
-        .ok_or_else(|| anyhow::anyhow!("no prepared clip was produced"))?;
+        .ok_or_else(|| anyhow::anyhow!("no prepared output was produced"))?;
 
     sender.send(WorkerEvent::Completed {
         job,
-        count: result.clips.len(),
+        count: result.outputs.len(),
         source,
         first_clip,
         effective_segment_seconds: result.effective_segment_seconds,
-        max_clip_bytes: result.max_clip_bytes,
+        max_clip_bytes: result.max_output_bytes,
     })?;
     Ok(())
 }
@@ -89,30 +81,32 @@ fn run(request: &PrepareRequest, sender: &Sender<WorkerEvent>) -> Result<()> {
 mod tests {
     use super::*;
     use crate::domain::InputSourceKind;
-    use crate::media::DEFAULT_TARGET_BYTES;
+    use crate::export_profile::{BuiltinExportProfile, WHATSAPP_TARGET_BYTES};
     use url::Url;
 
     #[test]
-    fn prepare_request_can_represent_default_remote_policy() {
+    fn prepare_request_can_represent_default_remote_whatsapp_policy() {
         let request = PrepareRequest {
             source: InputSource::remote(Url::parse("https://example.com/video").unwrap()),
             output_root: PathBuf::from("."),
-            requested_segment_seconds: 29.0,
-            target_bytes: DEFAULT_TARGET_BYTES,
+            profile: ExportProfile::builtin(BuiltinExportProfile::WhatsApp),
         };
         assert_eq!(request.source.kind(), InputSourceKind::RemoteUrl);
-        assert_eq!(request.target_bytes, 9_500_000);
-        assert!((request.requested_segment_seconds - 29.0).abs() < f64::EPSILON);
+        assert_eq!(
+            request.profile.target_file_bytes,
+            Some(WHATSAPP_TARGET_BYTES)
+        );
+        assert_eq!(request.profile.max_segment_seconds, Some(29.0));
     }
 
     #[test]
-    fn prepare_request_can_represent_local_source() {
+    fn prepare_request_can_represent_local_general_profile() {
         let request = PrepareRequest {
             source: InputSource::local("video.mkv"),
             output_root: PathBuf::from("."),
-            requested_segment_seconds: 29.0,
-            target_bytes: DEFAULT_TARGET_BYTES,
+            profile: ExportProfile::builtin(BuiltinExportProfile::UniversalMp4),
         };
         assert_eq!(request.source.kind(), InputSourceKind::LocalFile);
+        assert_eq!(request.profile.target_file_bytes, None);
     }
 }

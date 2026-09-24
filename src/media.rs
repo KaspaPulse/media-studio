@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use url::Url;
 
+use crate::export_profile::WHATSAPP_MAX_LONG_EDGE;
 pub use crate::export_profile::{
     WHATSAPP_HARD_LIMIT_BYTES as WHATSAPP_LIMIT_BYTES,
     WHATSAPP_MAX_SEGMENT_SECONDS as DEFAULT_SEGMENT_SECONDS,
@@ -214,12 +215,27 @@ fn adjusted_bitrate_kbps(current: u32, actual_bytes: u64, target_bytes: u64) -> 
         .clamp(96.0, f64::from(MAX_VIDEO_KBPS)) as u32
 }
 
-fn encode_clip(
+#[derive(Debug, Clone, Copy)]
+pub struct SizeConstrainedSettings<'a> {
+    pub target_bytes: u64,
+    pub hard_limit_bytes: Option<u64>,
+    pub max_long_edge: Option<u32>,
+    pub pixel_format: Option<&'a str>,
+}
+
+fn scale_filter(max_long_edge: u32) -> String {
+    format!(
+        "scale='if(gte(iw,ih),min({max_long_edge},iw),-2)':'if(gte(iw,ih),-2,min({max_long_edge},ih))'"
+    )
+}
+
+fn encode_bitrate_clip(
     source: &Path,
     output: &Path,
     start_seconds: f64,
     duration_seconds: f64,
     video_kbps: u32,
+    settings: SizeConstrainedSettings<'_>,
     tools: &Toolchain,
 ) -> Result<()> {
     let maxrate = video_kbps.saturating_mul(11) / 10;
@@ -230,20 +246,14 @@ fn encode_clip(
     command.arg("-i").arg(source);
     command.args(["-t", &format!("{duration_seconds:.3}")]);
     command.args(["-map", "0:v:0", "-map", "0:a:0?"]);
-    command.args([
-        "-vf",
-        "scale='if(gte(iw,ih),min(1280,iw),-2)':'if(gte(iw,ih),-2,min(1280,ih))'",
-        "-c:v",
-        "libx264",
-        "-preset",
-        "medium",
-        "-pix_fmt",
-        "yuv420p",
-        "-profile:v",
-        "high",
-        "-level",
-        "4.1",
-    ]);
+    if let Some(max_long_edge) = settings.max_long_edge {
+        command.arg("-vf").arg(scale_filter(max_long_edge));
+    }
+    command.args(["-c:v", "libx264", "-preset", "medium"]);
+    if let Some(pixel_format) = settings.pixel_format {
+        command.args(["-pix_fmt", pixel_format]);
+    }
+    command.args(["-profile:v", "high", "-level", "4.1"]);
     command.args(["-b:v", &format!("{video_kbps}k")]);
     command.args(["-maxrate", &format!("{maxrate}k")]);
     command.args(["-bufsize", &format!("{bufsize}k")]);
@@ -268,62 +278,77 @@ fn encode_size_safe_clip(
     output: &Path,
     start_seconds: f64,
     duration_seconds: f64,
-    target_bytes: u64,
+    settings: SizeConstrainedSettings<'_>,
     tools: &Toolchain,
 ) -> Result<u64> {
-    let mut bitrate = target_video_bitrate_kbps(duration_seconds, target_bytes);
+    let mut bitrate = target_video_bitrate_kbps(duration_seconds, settings.target_bytes);
     for attempt in 1..=MAX_ENCODE_ATTEMPTS {
         if output.exists() {
             fs::remove_file(output)?;
         }
-        encode_clip(
+        encode_bitrate_clip(
             source,
             output,
             start_seconds,
             duration_seconds,
             bitrate,
+            settings,
             tools,
         )?;
         let size = fs::metadata(output)?.len();
-        if size <= target_bytes {
+        if size <= settings.target_bytes {
             return Ok(size);
         }
         if attempt < MAX_ENCODE_ATTEMPTS {
-            bitrate = adjusted_bitrate_kbps(bitrate, size, target_bytes);
+            bitrate = adjusted_bitrate_kbps(bitrate, size, settings.target_bytes);
         }
     }
     let size = fs::metadata(output).map_or(0, |meta| meta.len());
-    bail!("unable to satisfy clip size budget: {size} bytes > {target_bytes} bytes")
+    bail!(
+        "unable to satisfy clip size budget: {size} bytes > {} bytes",
+        settings.target_bytes
+    )
 }
-/// Encodes verified H.264/AAC MP4 clips that do not exceed the configured byte target.
-///
-/// The requested duration is treated as a maximum. It is shortened automatically when
-/// the minimum bitrate floor would otherwise make the byte budget impossible.
+
+/// Encodes verified H.264/AAC MP4 clips under a caller-provided size policy.
 ///
 /// # Errors
-/// Returns an error for invalid size targets, media probing/encoding failures, or when
-/// a clip cannot satisfy the target after the bounded retry policy.
+/// Returns an error for invalid duration/byte constraints, encoding failures, or when an output
+/// cannot satisfy the target after the bounded retry policy.
 #[allow(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
     clippy::cast_precision_loss
 )]
-pub fn create_segments<F>(
+pub fn create_size_constrained_segments<F>(
     source: &Path,
     job: &Path,
+    total_duration: f64,
     requested_segment_seconds: f64,
-    target_bytes: u64,
+    settings: SizeConstrainedSettings<'_>,
     tools: &Toolchain,
     mut progress: F,
 ) -> Result<SegmentationResult>
 where
     F: FnMut(u8),
 {
-    if target_bytes == 0 || target_bytes > WHATSAPP_LIMIT_BYTES {
-        bail!("target size must be between 1 byte and the WhatsApp hard limit");
+    if !total_duration.is_finite() || total_duration <= 0.0 {
+        bail!("media duration must be positive");
     }
-    let total_duration = probe_duration(source, tools)?;
-    let segment_seconds = effective_segment_seconds(requested_segment_seconds, target_bytes);
+    if !requested_segment_seconds.is_finite() || requested_segment_seconds <= 0.0 {
+        bail!("segment duration must be greater than zero");
+    }
+    if settings.target_bytes == 0 {
+        bail!("target size must be greater than zero");
+    }
+    if let Some(hard_limit_bytes) = settings.hard_limit_bytes
+        && (hard_limit_bytes == 0 || settings.target_bytes >= hard_limit_bytes)
+    {
+        bail!("target size must remain below the configured hard limit");
+    }
+
+    let segment_seconds =
+        effective_segment_seconds(requested_segment_seconds, settings.target_bytes);
     let count = (total_duration / segment_seconds).ceil().max(1.0) as usize;
     let clips_dir = job.join("clips");
     let mut clips = Vec::with_capacity(count);
@@ -338,7 +363,7 @@ where
         }
         let duration = remaining.min(segment_seconds);
         let output = clips_dir.join(format!("status_{index:03}.mp4"));
-        let size = encode_size_safe_clip(source, &output, start, duration, target_bytes, tools)?;
+        let size = encode_size_safe_clip(source, &output, start, duration, settings, tools)?;
         max_clip_bytes = max_clip_bytes.max(size);
         clips.push(output);
         let percent = u8::try_from((((index + 1) * 100) / count).min(100)).unwrap_or(100);
@@ -352,9 +377,17 @@ where
         let size = fs::metadata(clip)
             .with_context(|| format!("encoded clip is missing or unreadable: {}", clip.display()))?
             .len();
-        if size > target_bytes {
+        if size > settings.target_bytes {
             bail!(
                 "post-encode size verification failed: {} is {size} bytes",
+                clip.display()
+            );
+        }
+        if let Some(hard_limit_bytes) = settings.hard_limit_bytes
+            && size > hard_limit_bytes
+        {
+            bail!(
+                "post-encode hard-limit verification failed: {} is {size} bytes",
                 clip.display()
             );
         }
@@ -365,6 +398,41 @@ where
         effective_segment_seconds: segment_seconds,
         max_clip_bytes,
     })
+}
+
+/// Backward-compatible `WhatsApp` segmentation wrapper.
+///
+/// # Errors
+/// Returns an error when probing or size-constrained encoding fails.
+pub fn create_segments<F>(
+    source: &Path,
+    job: &Path,
+    requested_segment_seconds: f64,
+    target_bytes: u64,
+    tools: &Toolchain,
+    progress: F,
+) -> Result<SegmentationResult>
+where
+    F: FnMut(u8),
+{
+    if target_bytes == 0 || target_bytes >= WHATSAPP_LIMIT_BYTES {
+        bail!("target size must be between 1 byte and the WhatsApp hard limit");
+    }
+    let total_duration = probe_duration(source, tools)?;
+    create_size_constrained_segments(
+        source,
+        job,
+        total_duration,
+        requested_segment_seconds,
+        SizeConstrainedSettings {
+            target_bytes,
+            hard_limit_bytes: Some(WHATSAPP_LIMIT_BYTES),
+            max_long_edge: Some(WHATSAPP_MAX_LONG_EDGE),
+            pixel_format: Some("yuv420p"),
+        },
+        tools,
+        progress,
+    )
 }
 
 #[cfg(test)]

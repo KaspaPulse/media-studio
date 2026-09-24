@@ -124,6 +124,18 @@ impl ExportProfile {
         }
     }
 
+    /// Builds the `WhatsApp` profile with a validated per-job duration and target size.
+    ///
+    /// # Errors
+    /// Returns an error when the supplied duration or target conflicts with the `WhatsApp` hard limit.
+    pub fn whatsapp(max_segment_seconds: f64, target_file_bytes: u64) -> Result<Self> {
+        let mut profile = Self::builtin(BuiltinExportProfile::WhatsApp);
+        profile.max_segment_seconds = Some(max_segment_seconds);
+        profile.target_file_bytes = Some(target_file_bytes);
+        profile.validate()?;
+        Ok(profile)
+    }
+
     /// Builds a caller-defined profile while preserving the same validation contract as built-ins.
     ///
     /// # Errors
@@ -195,6 +207,17 @@ mod tests {
         assert_eq!(profile.pixel_format.as_deref(), Some("yuv420p"));
         assert_eq!(profile.quality_intent, QualityIntent::SizeConstrained);
         profile.validate().unwrap();
+    }
+
+    #[test]
+    fn whatsapp_job_profile_accepts_valid_runtime_overrides() {
+        let profile = ExportProfile::whatsapp(45.0, 9_000_000).unwrap();
+        assert_eq!(profile.max_segment_seconds, Some(45.0));
+        assert_eq!(profile.target_file_bytes, Some(9_000_000));
+        assert_eq!(profile.hard_file_bytes, Some(WHATSAPP_HARD_LIMIT_BYTES));
+
+        assert!(ExportProfile::whatsapp(0.0, 9_000_000).is_err());
+        assert!(ExportProfile::whatsapp(29.0, WHATSAPP_HARD_LIMIT_BYTES).is_err());
     }
 
     #[test]
