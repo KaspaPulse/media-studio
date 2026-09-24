@@ -1,5 +1,11 @@
 use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UiDirection {
+    Ltr,
+    Rtl,
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Language {
@@ -15,6 +21,47 @@ impl Language {
             Self::Arabic => Self::English,
             Self::English => Self::Arabic,
         }
+    }
+
+    #[must_use]
+    pub const fn direction(self) -> UiDirection {
+        match self {
+            Self::Arabic => UiDirection::Rtl,
+            Self::English => UiDirection::Ltr,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Locale {
+    language: Language,
+}
+
+impl Locale {
+    #[must_use]
+    pub const fn new(language: Language) -> Self {
+        Self { language }
+    }
+
+    #[must_use]
+    pub const fn language(self) -> Language {
+        self.language
+    }
+
+    #[must_use]
+    pub const fn direction(self) -> UiDirection {
+        self.language.direction()
+    }
+
+    #[must_use]
+    pub fn strings(self) -> &'static Strings {
+        strings(self.language)
+    }
+}
+
+impl Default for Locale {
+    fn default() -> Self {
+        Self::new(Language::default())
     }
 }
 
@@ -113,6 +160,24 @@ mod tests {
     fn language_toggle_is_reversible() {
         assert_eq!(Language::Arabic.toggled(), Language::English);
         assert_eq!(Language::English.toggled(), Language::Arabic);
+    }
+
+    #[test]
+    fn language_direction_is_semantic() {
+        assert_eq!(Language::Arabic.direction(), UiDirection::Rtl);
+        assert_eq!(Language::English.direction(), UiDirection::Ltr);
+    }
+
+    #[test]
+    fn locale_exposes_language_direction_and_strings() {
+        let arabic = Locale::new(Language::Arabic);
+        assert_eq!(arabic.language(), Language::Arabic);
+        assert_eq!(arabic.direction(), UiDirection::Rtl);
+        assert_eq!(arabic.strings().ready, "جاهز");
+
+        let english = Locale::new(Language::English);
+        assert_eq!(english.direction(), UiDirection::Ltr);
+        assert_eq!(english.strings().ready, "Ready");
     }
 
     #[test]

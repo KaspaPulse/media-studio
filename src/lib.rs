@@ -1,3 +1,4 @@
+pub mod domain;
 pub mod downloader;
 pub mod i18n;
 pub mod media;
