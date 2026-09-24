@@ -1,7 +1,12 @@
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
-use iced::widget::{button, column, container, pick_list, progress_bar, row, text, text_input};
-use iced::{Alignment, Element, Length, Size, Subscription, Task, Theme, time, window};
+use iced::widget::{
+    button, column, container, pick_list, progress_bar, responsive, row, text, text_input,
+};
+use iced::{
+    Alignment, Element, Length, Size, Subscription, Task, Theme, alignment::Horizontal, event,
+    system, theme, time, window,
+};
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -11,12 +16,16 @@ use whatsapp_video_preparer::domain::{AppViewState, InputSource};
 use whatsapp_video_preparer::export_profile::{
     BuiltinExportProfile, ExportProfile, WHATSAPP_TARGET_BYTES,
 };
-use whatsapp_video_preparer::i18n::{Language, Strings, strings};
+use whatsapp_video_preparer::i18n::{Language, Strings, UiDirection, strings};
 use whatsapp_video_preparer::media::{DEFAULT_SEGMENT_SECONDS, duration_to_seconds, is_valid_url};
 use whatsapp_video_preparer::media_probe::MediaMetadata;
 use whatsapp_video_preparer::settings::AppSettings;
 use whatsapp_video_preparer::ui::app::{BUILTIN_PROFILES, media_summary, profile_label};
 use whatsapp_video_preparer::ui::bidi::isolate_ltr;
+use whatsapp_video_preparer::ui::direction::{logical_pair, logical_sequence};
+use whatsapp_video_preparer::ui::layout::{LayoutBreakpoints, LayoutClass};
+use whatsapp_video_preparer::ui::theme::{ResolvedTheme, ThemePreference, resolved_system_theme};
+use whatsapp_video_preparer::ui::tokens::Spacing;
 use whatsapp_video_preparer::worker::{
     PrepareRequest, ProbeEvent, WorkerEvent, spawn, spawn_local_probe,
 };
@@ -24,10 +33,10 @@ use whatsapp_video_preparer::worker::{
 fn main() -> iced::Result {
     let icon = window::icon::from_file_data(include_bytes!("../assets/app_icon.png"), None).ok();
 
-    iced::application(App::default, update, view)
+    iced::application(boot, update, view)
         .title(|app: &App| strings(app.language).title.to_owned())
         .subscription(subscription)
-        .theme(Theme::Light)
+        .theme(app_theme)
         .window(window::Settings {
             size: Size::new(920.0, 680.0),
             min_size: Some(Size::new(720.0, 560.0)),
@@ -37,6 +46,20 @@ fn main() -> iced::Result {
         })
         .antialiasing(true)
         .run()
+}
+
+fn boot() -> (App, Task<Message>) {
+    (
+        App::default(),
+        system::theme().map(Message::SystemThemeChanged),
+    )
+}
+
+const fn app_theme(app: &App) -> Theme {
+    match app.theme_preference.resolve(app.system_theme) {
+        ResolvedTheme::Light => Theme::Light,
+        ResolvedTheme::Dark => Theme::Dark,
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -110,8 +133,11 @@ enum Message {
     ProfileSelected(BuiltinExportProfile),
     BrowseOutput,
     OpenLocal,
+    FileDropped(PathBuf),
     Prepare,
     ToggleLanguage,
+    CycleTheme,
+    SystemThemeChanged(theme::Mode),
     OpenFolder,
     OpenSource,
     OpenClip,
@@ -120,6 +146,8 @@ enum Message {
 
 struct App {
     language: Language,
+    theme_preference: ThemePreference,
+    system_theme: ResolvedTheme,
     source_mode: SourceMode,
     local_source: Option<PathBuf>,
     url: String,
@@ -144,6 +172,8 @@ impl Default for App {
         let language = settings.language;
         Self {
             language,
+            theme_preference: settings.theme,
+            system_theme: ResolvedTheme::Light,
             source_mode: SourceMode::RemoteUrl,
             local_source: None,
             url: String::new(),
@@ -225,8 +255,13 @@ fn update(app: &mut App, message: Message) -> Task<Message> {
         }
         Message::BrowseOutput => browse_output(app),
         Message::OpenLocal => open_local(app),
+        Message::FileDropped(path) => select_local_source(app, path),
         Message::Prepare => prepare(app),
         Message::ToggleLanguage => toggle_language(app),
+        Message::CycleTheme => toggle_theme(app),
+        Message::SystemThemeChanged(mode) => {
+            app.system_theme = resolved_system_theme(mode);
+        }
         Message::OpenFolder => open_path(app, app.last_folder.clone()),
         Message::OpenSource => open_path(app, app.last_source.clone()),
         Message::OpenClip => open_path(app, app.last_clip.clone()),
@@ -260,6 +295,14 @@ fn open_local(app: &mut App) {
     let Some(path) = dialog.pick_file() else {
         return;
     };
+
+    select_local_source(app, path);
+}
+
+fn select_local_source(app: &mut App, path: PathBuf) {
+    if app.operation_active() {
+        return;
+    }
 
     app.source_mode = SourceMode::LocalFile;
     app.local_source = Some(path.clone());
@@ -335,10 +378,19 @@ fn toggle_language(app: &mut App) {
     save_settings(app);
 }
 
+fn toggle_theme(app: &mut App) {
+    if app.operation_active() {
+        return;
+    }
+    app.theme_preference = app.theme_preference.next();
+    save_settings(app);
+}
+
 fn save_settings(app: &App) {
     AppSettings {
         language: app.language,
         output_dir: PathBuf::from(&app.output),
+        theme: app.theme_preference,
     }
     .save();
 }
@@ -461,12 +513,28 @@ fn apply_worker_event(app: &mut App, event: WorkerEvent) {
     }
 }
 
-fn subscription(app: &App) -> Subscription<Message> {
-    if app.worker.is_some() || app.probe_worker.is_some() {
-        time::every(Duration::from_millis(120)).map(|_| Message::PollWorkers)
-    } else {
-        Subscription::none()
+fn runtime_event(
+    event: iced::Event,
+    _status: event::Status,
+    _window: window::Id,
+) -> Option<Message> {
+    match event {
+        iced::Event::Window(window::Event::FileDropped(path)) => Some(Message::FileDropped(path)),
+        _ => None,
     }
+}
+
+fn subscription(app: &App) -> Subscription<Message> {
+    let mut subscriptions = vec![
+        event::listen_with(runtime_event),
+        system::theme_changes().map(Message::SystemThemeChanged),
+    ];
+
+    if app.worker.is_some() || app.probe_worker.is_some() {
+        subscriptions.push(time::every(Duration::from_millis(120)).map(|_| Message::PollWorkers));
+    }
+
+    Subscription::batch(subscriptions)
 }
 
 fn profile_button_label(app: &App, strings: &Strings, profile: BuiltinExportProfile) -> String {
@@ -478,159 +546,335 @@ fn profile_button_label(app: &App, strings: &Strings, profile: BuiltinExportProf
     }
 }
 
+fn theme_button_label(app: &App, t: &Strings) -> String {
+    let preference = match app.theme_preference {
+        ThemePreference::System => t.theme_system,
+        ThemePreference::Light => t.theme_light,
+        ThemePreference::Dark => t.theme_dark,
+    };
+    format!("{}: {preference}", t.theme)
+}
+
+fn technical_fragment(language: Language, value: impl AsRef<str>) -> String {
+    if language == Language::Arabic {
+        isolate_ltr(value)
+    } else {
+        value.as_ref().to_owned()
+    }
+}
+
 fn source_description(app: &App) -> String {
     match app.source_mode {
         SourceMode::LocalFile => app.local_source.as_ref().map_or_else(
             || "—".to_owned(),
-            |path| isolate_ltr(path.to_string_lossy()),
+            |path| technical_fragment(app.language, path.to_string_lossy()),
         ),
         SourceMode::RemoteUrl => {
             if app.url.trim().is_empty() {
                 "—".to_owned()
             } else {
-                isolate_ltr(app.url.trim())
+                technical_fragment(app.language, app.url.trim())
             }
         }
     }
 }
 
-fn source_section<'a>(app: &'a App, t: &'static Strings, active: bool) -> Element<'a, Message> {
-    let open_local = button(t.open_local).on_press_maybe((!active).then_some(Message::OpenLocal));
-    let url_input = text_input(t.url_placeholder, &app.url)
+const fn logical_alignment(direction: UiDirection) -> Alignment {
+    match direction {
+        UiDirection::Ltr => Alignment::Start,
+        UiDirection::Rtl => Alignment::End,
+    }
+}
+
+fn card(content: Element<'_, Message>) -> Element<'_, Message> {
+    container(content)
+        .padding(Spacing::LG)
+        .width(Length::Fill)
+        .style(iced::widget::container::rounded_box)
+        .into()
+}
+
+fn top_bar<'a>(
+    app: &'a App,
+    t: &'static Strings,
+    active: bool,
+    direction: UiDirection,
+) -> Element<'a, Message> {
+    let title: Element<'a, Message> = column![text(t.title).size(30), text(t.subtitle).size(15)]
+        .spacing(4)
+        .align_x(logical_alignment(direction))
+        .width(Length::Fill)
+        .into();
+
+    let language: Element<'a, Message> = button(t.language)
+        .on_press_maybe((!active).then_some(Message::ToggleLanguage))
+        .into();
+    let theme: Element<'a, Message> = button(text(theme_button_label(app, t)))
+        .on_press_maybe((!active).then_some(Message::CycleTheme))
+        .into();
+    let [first_control, second_control] = logical_pair(direction, language, theme);
+    let controls: Element<'a, Message> = row![first_control, second_control]
+        .spacing(Spacing::SM)
+        .align_y(Alignment::Center)
+        .into();
+
+    let [first, second] = logical_pair(direction, title, controls);
+    row![first, second]
+        .spacing(Spacing::LG)
+        .align_y(Alignment::Center)
+        .width(Length::Fill)
+        .into()
+}
+
+fn source_section<'a>(
+    app: &'a App,
+    t: &'static Strings,
+    active: bool,
+    direction: UiDirection,
+) -> Element<'a, Message> {
+    let url_input: Element<'a, Message> = text_input(t.url_placeholder, &app.url)
         .on_input(Message::UrlChanged)
+        .align_x(Horizontal::Left)
         .padding(10)
-        .width(Length::Fill);
-    let source_row = row![open_local, url_input]
-        .spacing(10)
+        .width(Length::Fill)
+        .into();
+    let open_local: Element<'a, Message> = button(t.open_local)
+        .on_press_maybe((!active).then_some(Message::OpenLocal))
+        .into();
+    let [first, second] = logical_pair(direction, url_input, open_local);
+    let source_row = row![first, second]
+        .spacing(Spacing::SM)
         .align_y(Alignment::Center);
+
     let media_description = app
         .media_metadata
         .as_ref()
         .map_or_else(|| "—".to_owned(), media_summary);
 
-    column![
-        text(t.source),
-        source_row,
-        text(source_description(app)).size(13),
-        text(t.media_info),
-        text(media_description),
-    ]
-    .spacing(8)
-    .into()
+    card(
+        column![
+            text(t.source),
+            text(t.drop_hint).size(13),
+            source_row,
+            text(source_description(app)).size(13),
+            text(t.media_info),
+            text(media_description),
+        ]
+        .spacing(Spacing::SM)
+        .align_x(logical_alignment(direction))
+        .into(),
+    )
 }
 
-fn profile_section<'a>(app: &'a App, t: &'static Strings, active: bool) -> Element<'a, Message> {
-    let profile_button = |profile| {
-        button(text(profile_button_label(app, t, profile)))
-            .on_press_maybe((!active).then_some(Message::ProfileSelected(profile)))
+fn profile_section<'a>(
+    app: &'a App,
+    t: &'static Strings,
+    active: bool,
+    direction: UiDirection,
+    layout: LayoutClass,
+) -> Element<'a, Message> {
+    let buttons: Vec<Element<'a, Message>> = BUILTIN_PROFILES
+        .into_iter()
+        .map(|profile| {
+            button(text(profile_button_label(app, t, profile)))
+                .on_press_maybe((!active).then_some(Message::ProfileSelected(profile)))
+                .into()
+        })
+        .collect();
+    let buttons = logical_sequence(direction, buttons);
+    let profile_picker: Element<'a, Message> = if layout == LayoutClass::Compact {
+        iced::widget::Column::with_children(buttons)
+            .spacing(Spacing::SM)
+            .width(Length::Fill)
+            .into()
+    } else {
+        iced::widget::Row::with_children(buttons)
+            .spacing(Spacing::SM)
+            .into()
     };
-    let profile_row = row![
-        profile_button(BUILTIN_PROFILES[0]),
-        profile_button(BUILTIN_PROFILES[1]),
-        profile_button(BUILTIN_PROFILES[2]),
-        profile_button(BUILTIN_PROFILES[3]),
-    ]
-    .spacing(8);
 
-    let duration_input = text_input("", &app.duration)
+    let duration_input: Element<'a, Message> = text_input("", &app.duration)
         .on_input(Message::DurationChanged)
+        .align_x(Horizontal::Left)
         .padding(10)
-        .width(Length::FillPortion(2));
-    let unit_pick = pick_list(
+        .width(Length::FillPortion(2))
+        .into();
+    let unit_pick: Element<'a, Message> = pick_list(
         duration_options(t),
         Some(duration_option(t, app.unit)),
         Message::UnitSelected,
     )
-    .width(Length::FillPortion(1));
-    let duration_row = row![duration_input, unit_pick]
-        .spacing(10)
+    .width(Length::FillPortion(1))
+    .into();
+    let [first_duration, second_duration] = logical_pair(direction, duration_input, unit_pick);
+    let duration_row = row![first_duration, second_duration]
+        .spacing(Spacing::SM)
         .align_y(Alignment::Center);
+
     let profile_detail = if app.selected_profile == BuiltinExportProfile::WhatsApp {
         t.size_budget
     } else {
         profile_label(t, app.selected_profile)
     };
 
-    column![
-        text(t.export_profile),
-        profile_row,
-        text(profile_detail).size(13),
-        text(t.segment_duration),
-        duration_row,
-    ]
-    .spacing(8)
-    .into()
+    card(
+        column![
+            text(t.export_profile),
+            profile_picker,
+            text(profile_detail).size(13),
+            text(t.segment_duration),
+            duration_row,
+        ]
+        .spacing(Spacing::SM)
+        .align_x(logical_alignment(direction))
+        .into(),
+    )
 }
 
-fn output_section<'a>(app: &'a App, t: &'static Strings, active: bool) -> Element<'a, Message> {
-    let output_input = text_input("", &app.output)
+fn output_section<'a>(
+    app: &'a App,
+    t: &'static Strings,
+    active: bool,
+    direction: UiDirection,
+) -> Element<'a, Message> {
+    let output_input: Element<'a, Message> = text_input("", &app.output)
         .on_input(Message::OutputChanged)
+        .align_x(Horizontal::Left)
         .padding(10)
-        .width(Length::Fill);
-    let browse_button = button(t.browse).on_press_maybe((!active).then_some(Message::BrowseOutput));
+        .width(Length::Fill)
+        .into();
+    let browse_button: Element<'a, Message> = button(t.browse)
+        .on_press_maybe((!active).then_some(Message::BrowseOutput))
+        .into();
+    let [first, second] = logical_pair(direction, output_input, browse_button);
 
-    column![
-        text(t.output),
-        row![output_input, browse_button]
-            .spacing(10)
-            .align_y(Alignment::Center),
-    ]
-    .spacing(8)
-    .into()
+    card(
+        column![
+            text(t.output),
+            row![first, second]
+                .spacing(Spacing::SM)
+                .align_y(Alignment::Center),
+        ]
+        .spacing(Spacing::SM)
+        .align_x(logical_alignment(direction))
+        .into(),
+    )
 }
 
-fn action_section<'a>(app: &'a App, t: &'static Strings, active: bool) -> Element<'a, Message> {
-    let prepare_button = button(t.prepare)
+fn action_section<'a>(app: &'a App, t: &'static Strings) -> Element<'a, Message> {
+    button(t.prepare)
         .on_press_maybe(app.can_start().then_some(Message::Prepare))
-        .width(Length::FillPortion(3));
-    let language_button = button(t.language)
-        .on_press_maybe((!active).then_some(Message::ToggleLanguage))
-        .width(Length::FillPortion(1));
-
-    row![prepare_button, language_button]
-        .spacing(10)
         .width(Length::Fill)
         .into()
 }
 
-fn result_section<'a>(app: &'a App, t: &'static Strings) -> Element<'a, Message> {
-    let open_source =
-        button(t.open_source).on_press_maybe(app.last_source.as_ref().map(|_| Message::OpenSource));
-    let open_clip =
-        button(t.open_clip).on_press_maybe(app.last_clip.as_ref().map(|_| Message::OpenClip));
-    let open_folder =
-        button(t.open_folder).on_press_maybe(app.last_folder.as_ref().map(|_| Message::OpenFolder));
+fn result_section<'a>(
+    app: &'a App,
+    t: &'static Strings,
+    direction: UiDirection,
+) -> Element<'a, Message> {
+    let buttons: Vec<Element<'a, Message>> = vec![
+        button(t.open_source)
+            .on_press_maybe(app.last_source.as_ref().map(|_| Message::OpenSource))
+            .into(),
+        button(t.open_clip)
+            .on_press_maybe(app.last_clip.as_ref().map(|_| Message::OpenClip))
+            .into(),
+        button(t.open_folder)
+            .on_press_maybe(app.last_folder.as_ref().map(|_| Message::OpenFolder))
+            .into(),
+    ];
 
-    row![open_source, open_clip, open_folder].spacing(10).into()
+    iced::widget::Row::with_children(logical_sequence(direction, buttons))
+        .spacing(Spacing::SM)
+        .into()
+}
+
+fn status_section(app: &App) -> Element<'_, Message> {
+    column![text(&app.status), progress_bar(0.0..=100.0, app.progress),]
+        .spacing(Spacing::SM)
+        .width(Length::Fill)
+        .into()
+}
+
+fn layout_class(width: f32) -> LayoutClass {
+    let Some(breakpoints) = LayoutBreakpoints::new(760.0, 1_200.0) else {
+        return LayoutClass::Standard;
+    };
+    breakpoints.classify(width).unwrap_or(LayoutClass::Standard)
+}
+
+fn screen_content<'a>(
+    app: &'a App,
+    t: &'static Strings,
+    active: bool,
+    layout: LayoutClass,
+) -> Element<'a, Message> {
+    let direction = app.language.direction();
+    let top = top_bar(app, t, active, direction);
+    let action = action_section(app, t);
+    let status = status_section(app);
+    let results = result_section(app, t, direction);
+
+    match layout {
+        LayoutClass::Compact | LayoutClass::Standard => column![
+            top,
+            source_section(app, t, active, direction),
+            profile_section(app, t, active, direction, layout),
+            output_section(app, t, active, direction),
+            action,
+            status,
+            results,
+        ]
+        .spacing(Spacing::MD)
+        .align_x(logical_alignment(direction))
+        .width(Length::Fill)
+        .into(),
+        LayoutClass::Wide => {
+            let left: Element<'a, Message> = column![
+                source_section(app, t, active, direction),
+                output_section(app, t, active, direction),
+            ]
+            .spacing(Spacing::MD)
+            .width(Length::FillPortion(3))
+            .into();
+            let right: Element<'a, Message> =
+                container(profile_section(app, t, active, direction, layout))
+                    .width(Length::FillPortion(2))
+                    .into();
+            let [first, second] = logical_pair(direction, left, right);
+
+            column![
+                top,
+                row![first, second].spacing(Spacing::MD).width(Length::Fill),
+                action,
+                status,
+                results,
+            ]
+            .spacing(Spacing::MD)
+            .align_x(logical_alignment(direction))
+            .width(Length::Fill)
+            .into()
+        }
+    }
 }
 
 fn view(app: &App) -> Element<'_, Message> {
     let t = strings(app.language);
     let active = app.operation_active();
-    let alignment = if app.language == Language::Arabic {
-        Alignment::End
-    } else {
-        Alignment::Start
-    };
 
-    let content = column![
-        text(t.title).size(30),
-        text(t.subtitle).size(16),
-        source_section(app, t, active),
-        profile_section(app, t, active),
-        output_section(app, t, active),
-        action_section(app, t, active),
-        result_section(app, t),
-        text(&app.status),
-        progress_bar(0.0..=100.0, app.progress),
-    ]
-    .spacing(12)
-    .align_x(alignment)
-    .width(Length::Fill);
+    responsive(move |size| {
+        let layout = layout_class(size.width);
+        let padding = match layout {
+            LayoutClass::Compact => Spacing::LG,
+            LayoutClass::Standard | LayoutClass::Wide => Spacing::XL,
+        };
 
-    container(content)
-        .padding(24)
-        .width(Length::Fill)
-        .height(Length::Fill)
-        .into()
+        container(screen_content(app, t, active, layout))
+            .padding(padding)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .into()
+    })
+    .into()
 }

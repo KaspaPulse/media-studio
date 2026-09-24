@@ -42,6 +42,14 @@ pub const fn logical_pair<T>(direction: UiDirection, start: T, end: T) -> [T; 2]
     }
 }
 
+#[must_use]
+pub fn logical_sequence<T>(direction: UiDirection, mut items: Vec<T>) -> Vec<T> {
+    if matches!(direction, UiDirection::Rtl) {
+        items.reverse();
+    }
+    items
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -75,6 +83,18 @@ mod tests {
         assert_eq!(
             logical_pair(UiDirection::Rtl, "start", "end"),
             ["end", "start"]
+        );
+    }
+
+    #[test]
+    fn logical_sequence_reverses_visual_order_only_for_rtl() {
+        assert_eq!(
+            logical_sequence(UiDirection::Ltr, vec![1, 2, 3]),
+            vec![1, 2, 3]
+        );
+        assert_eq!(
+            logical_sequence(UiDirection::Rtl, vec![1, 2, 3]),
+            vec![3, 2, 1]
         );
     }
 
