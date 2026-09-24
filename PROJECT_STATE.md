@@ -5,7 +5,7 @@ Repository: `KaspaPulse/whatsapp-video-preparer`
 Visibility: PUBLIC
 Default branch: `main`
 Active task: `KASPAPULSE_MEDIA_STUDIO_V3`
-Current phase: `G7 — V3 MAIN SCREEN`
+Current phase: `G7R — IDENTITY MIGRATION / REPOSITORY RENAME`
 
 ## Product boundary
 CURRENT_PRODUCT=WhatsApp Video Preparer
@@ -47,22 +47,26 @@ G6_CHECKPOINT_SHA=`6ab0f026a270f26e361b3b649b1321b00e74db53`
 Rust-owned UI foundations now provide logical direction/mirroring, BiDi isolation, semantic focus order, caller-tuned responsive layout classes, System/Light/Dark theme preference, and semantic design tokens.
 UI foundation tests: 13/13 PASS; lib check/Clippy and repository policy gate PASS under OP-0103/OP-0104.
 
-## Current phase — G7 V3 Main Screen
-Goal: replace the WhatsApp-only v2 screen with the general KaspaPulse Media Studio v3 UX while consuming the completed G1-G6 foundations.
+G7_V3_MAIN_SCREEN=VERIFIED_SUCCESS_LOCAL_CHECKPOINTS
+G7A_CHECKPOINT_SHA=`083da022e376174725b7420568d05fbdd4160358`
+G7B_CHECKPOINT_SHA=`6615a5021f670eda39fdf1a193c0f685a9ae743e`
+G7C_CHECKPOINT_SHA=`40a835142e0786c485b7926e5fa57ef0f52beba8`
+G7 now supports LocalFile and RemoteUrl UX, optional drag/drop with required file picker fallback, MediaProbe metadata display, ExportProfile selection, AppViewState-driven progress, responsive Compact/Standard/Wide layout, application-owned RTL/LTR visual ordering, System/Light/Dark theme preference, and keyboard/focus/testability wiring.
+Static and focused local qualification PASS; native keyboard/focus interaction remains NOT_VERIFIED until G8.
+
+## Current phase — G7R Identity Migration / Repository Rename
+Goal: migrate product/repository identity to KaspaPulse Media Studio / KaspaPulse/media-studio while preserving v2 history and user settings continuity.
 
 Required:
-- LocalFile and RemoteUrl source selection with non-drag file picker always available;
-- optional drag-and-drop source selection;
-- structured MediaProbe information surfaced before processing;
-- ExportProfile selection and output controls;
-- responsive Compact/Standard/Wide layout;
-- true application-owned RTL/LTR visual ordering with technical fields kept LTR;
-- System/Light/Dark theme wiring;
-- semantic focus/keyboard behavior and stable testable identities where supported;
-- progress/results/error states driven by AppViewState semantics;
-- no broad screen-reader accessibility claim.
+- inventory every current v2 identity surface before mutation;
+- update repository/product/package/application metadata coherently;
+- preserve v2.0.0 tag/release/assets/history immutably;
+- migrate settings identity without losing existing user preferences;
+- update workflow/release artifact naming for future v3 only;
+- perform GitHub repository rename only after local identity delta is qualified;
+- verify old repository URL redirects and historical release access after rename.
 
-G7 must not rename the repository, rewrite v2 history, or publish v3.
+G7R must not publish v3.0.0 or rewrite historical v2 artifacts.
 
 ## Baselines
 GUI_FRAMEWORK=iced
@@ -82,4 +86,4 @@ Policies:
 `TEST_THE_AFFECTED_SURFACE / REUSE_VALID_EVIDENCE / RERUN_ONLY_WHEN_INVALIDATED / NO_FAKE_PASS`
 
 NEXT ACTION:
-Inspect iced 0.14.0 APIs used by the frozen contract, then implement G7 in bounded local slices: source/profile/state wiring, responsive RTL/theme layout, and keyboard/testability qualification.
+Inventory all product/repository identity surfaces, then implement and locally qualify the bounded G7R identity migration before any GitHub repository rename.
