@@ -1,19 +1,21 @@
 # PROJECT STATE
 
 Updated: 2026-09-24
-Repository: `KaspaPulse/whatsapp-video-preparer`
+Repository: `KaspaPulse/media-studio`
 Visibility: PUBLIC
 Default branch: `main`
 Active task: `KASPAPULSE_MEDIA_STUDIO_V3`
-Current phase: `G7R-B — GITHUB REPOSITORY RENAME`
+Current phase: `G8 — NATIVE QUALIFICATION`
 
 ## Product boundary
-CURRENT_PRODUCT=WhatsApp Video Preparer
-CURRENT_VERSION=2.0.0
+CURRENT_PRODUCT=KaspaPulse Media Studio
+CURRENT_VERSION=3.0.0
+CURRENT_RELEASE_STATUS=DEVELOPMENT_CANDIDATE_NOT_PUBLISHED
+CURRENT_REPOSITORY=KaspaPulse/media-studio
 TARGET_PRODUCT=KaspaPulse Media Studio
 TARGET_VERSION=3.0.0
 TARGET_REPOSITORY=KaspaPulse/media-studio
-REPOSITORY_RENAME_STATUS=READY_FOR_AUTHORIZED_GITHUB_RENAME
+REPOSITORY_RENAME_STATUS=VERIFIED_SUCCESS
 V2_HISTORICAL_BOUNDARY=IMMUTABLE
 
 ## Completed and verified
@@ -82,7 +84,26 @@ Required:
 - verify v2.0.0 tag/release/assets remain reachable and unchanged;
 - do not push the 17-commit v3 candidate until rename verification completes.
 
-G7R-B must not publish v3.0.0 or rewrite historical v2 artifacts.
+G7R_B_GITHUB_REPOSITORY_RENAME=VERIFIED_SUCCESS
+Repository ID `1362998218` is preserved under `KaspaPulse/media-studio`; old repository URLs redirect and the v2.0.0 tag/release/assets remain unchanged.
+
+## Current phase — G8 Native Qualification
+Goal: qualify the complete v3 candidate locally where reliable and remotely only for platform/GitHub-only surfaces.
+
+Required:
+- Rust Policy / cargo-deny;
+- Windows x64 native build/package/runtime;
+- macOS x64 and arm64 native build/package/runtime through required remote runners;
+- local file and RemoteUrl acquisition paths;
+- representative FFmpeg-readable formats;
+- yt-dlp supported-source path;
+- built-in export profiles;
+- remux and transcode paths;
+- WhatsApp size-budget evidence;
+- Arabic/LTR responsive/theme/keyboard interaction evidence;
+- SBOM/provenance on exact integrated main.
+
+G8 must maximize local evidence before the first v3 push and must not publish v3.0.0.
 
 ## Baselines
 GUI_FRAMEWORK=iced
@@ -102,4 +123,4 @@ Policies:
 `TEST_THE_AFFECTED_SURFACE / REUSE_VALID_EVIDENCE / RERUN_ONLY_WHEN_INVALIDATED / NO_FAKE_PASS`
 
 NEXT ACTION:
-Fresh-read GitHub repository/main/open PRs, then perform the authorized repository rename to KaspaPulse/media-studio, update local origin, and verify redirects/v2 history before the first v3 push.
+Inventory G8 validity predicates and existing reusable evidence, then run only the missing local native/integration qualification before the first v3 candidate push.

@@ -7,7 +7,7 @@ KASPAPULSE_MEDIA_STUDIO_V3
 IN_PROGRESS
 
 ## Current phase
-G7R-B — GITHUB REPOSITORY RENAME
+G8 — NATIVE QUALIFICATION
 
 ## Completed
 G0_FOUNDATION_FREEZE=PASS
@@ -35,13 +35,25 @@ Required decisions:
 
 G7R-A local identity migration is qualified at `dbcab7807540feb6a70fd6106dca261d3d237bfc` / tree `7b8ea8fcd5aa0127a9c026f04ec7adc94656b2bf`.
 
-## G7R-B objective
-Perform only the authorized GitHub repository rename to `KaspaPulse/media-studio`, update the local origin remote, and verify redirects plus immutable v2 history before any v3 candidate push.
+G7R_B_GITHUB_REPOSITORY_RENAME=VERIFIED_SUCCESS
+Repository ID `1362998218` is preserved at `KaspaPulse/media-studio`; old repository URLs redirect and v2.0.0 history remains intact.
 
-No v3 release tag/publication in this phase.
+## G8 objective
+Qualify the complete Media Studio v3 candidate locally wherever reliable, then use one qualified push for required GitHub/macOS validation.
+
+Required:
+- Windows native candidate and package identity;
+- local/remote acquisition integration;
+- representative media formats;
+- remux/transcode/profile/WhatsApp budget evidence;
+- responsive RTL/LTR/theme/keyboard interaction evidence;
+- exact-head Windows/macOS/Rust Policy remote CI after local qualification;
+- exact-main SBOM/provenance after merge.
+
+No v3 release tag/publication until G8 closes.
 
 ## Do not repeat
 Do not replay G0-G7 qualification while relevant predicates remain unchanged.
 
 ## Next safe action
-Fresh-read remote main/open PRs/repository identity, then execute the authorized GitHub rename and verify local origin, redirects, and v2.0.0 history before pushing the qualified v3 candidate.
+Inventory G8 reusable evidence and missing validity predicates, run only missing local qualification, then push one fully qualified v3 candidate for required remote validation.

@@ -2,11 +2,11 @@
 
 Policy ID: UNIVERSAL_CONTINUITY_V2_20260913
 
-Current GitHub repository before the G7R-B external rename:
-`KaspaPulse/whatsapp-video-preparer`
-
-Target GitHub repository:
+Current GitHub repository:
 `KaspaPulse/media-studio`
+
+Historical repository URL (redirect verified):
+`KaspaPulse/whatsapp-video-preparer`
 
 Current task:
 `KASPAPULSE_MEDIA_STUDIO_V3`
@@ -32,8 +32,9 @@ Observable Git/filesystem/process/CI/runtime evidence wins over stale prose. Rec
 progress before retrying. Preserve partial work and active jobs. Reuse verified evidence only
 while its source/environment/artifact/policy validity predicates hold.
 
-The v3 implementation is developed and qualified locally first. GitHub is used only after a
-coherent local candidate is qualified.
+The v3 implementation is developed and qualified locally first. The GitHub repository rename to
+`KaspaPulse/media-studio` completed during G7R-B with repository ID/history preserved. GitHub is
+used for candidate integration only after a coherent local candidate is qualified.
 
 ## KSSS binding
 
