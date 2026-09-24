@@ -1,52 +1,72 @@
 # CURRENT STATE
 
-TASK_ID: WVP_RUST_STRICT_HARDENING_DELTA
-STATUS: VERIFIED_SUCCESS / TASK_CLOSED
+TASK_ID: KASPAPULSE_MEDIA_STUDIO_V3
+STATUS: IN_PROGRESS
+PHASE: G0_FOUNDATION_FREEZE
 
 REPOSITORY: KaspaPulse/whatsapp-video-preparer
 VISIBILITY: PUBLIC
-APPLICATION_VERSION: 2.0.0
 
-QUALIFIED_TECHNICAL_MAIN_SHA: 7c1d608fbd78fed2e0fcc52c30e85a3d9546628f
-QUALIFIED_TECHNICAL_MAIN_TREE: 615d24aa0021919cb1c30bb06db56b6bfe36e8e3
-RUST_V2_MERGE_SHA: feeb43230e688496888a843809333c41a119d35f
-HARDENING_PR: 7
-HARDENING_PR_STATE: MERGED_SQUASH
+SOURCE_BASE_SHA: 2440690ecc1845b79de47550e672d767edbb9393
+SOURCE_BASE_TREE: b712b1da64b5de3739cc087292d1cb427621a931
 
-COMPLETED_AND_VERIFIED:
-- application logic Rust-only;
-- automated test logic Rust-only;
-- repository-owned build/packaging/validation logic Rust-only;
-- workflow YAML declarative orchestration only;
-- inline PowerShell/Bash business logic absent;
-- external Actions full-40-character-SHA pinned;
-- cargo-deny 0.20.2 advisories/licenses/bans/sources PASS, no ignores;
-- RUSTSEC-2026-0253 active build path removed on Windows x64, macOS arm64, and macOS x64;
-- target-filtered graphs have lru / cryoglyph / iced_wgpu unreachable and iced_tiny_skia 0.14.1 present;
-- Cargo.lock identity delta from pre-hardening baseline: 579 -> 474, 0 new / 105 removed;
-- exact-head Rust Policy / Windows / macOS CI PASS;
-- exact-main Rust Policy PASS;
-- exact-main Windows build / package / real size-budget / GUI / SPDX PASS;
-- exact-main macOS x64 and arm64 build / package / real size-budget / GUI / SPDX PASS;
-- public-repository Windows provenance + SBOM attestation PASS;
-- public-repository macOS x64 provenance + SBOM attestation PASS;
-- public-repository macOS arm64 provenance + SBOM attestation PASS;
-- GitHub Languages: Rust only on the qualified technical main;
-- forbidden tracked executable-code extensions: zero.
+CURRENT_PRODUCT: WhatsApp Video Preparer
+CURRENT_VERSION: 2.0.0
 
-CAPABILITY_HISTORY:
-- initial private-repository attestation persistence was unavailable;
-- owner authorized PUBLIC visibility;
-- rerun on the same qualified technical main succeeded;
-- no attestation workaround or weakened control was used.
+TARGET_PRODUCT: KaspaPulse Media Studio
+TARGET_VERSION: 3.0.0
+TARGET_REPOSITORY: KaspaPulse/media-studio
+REPOSITORY_RENAME_STATUS: DEFERRED
 
-NOT_STARTED:
-- release;
-- tag;
-- deployment.
+V2_HISTORICAL_BOUNDARY: IMMUTABLE
+V2_0_0_RELEASE: PRESERVE
+V2_TAGS: DO_NOT_REWRITE
+V2_RELEASE_ASSETS: DO_NOT_RENAME_OR_REPLACE
 
-DO_NOT_REPEAT:
-Do not repeat valid qualification unless source, dependency graph, workflow, helper, toolchain, platform, or policy validity predicates change.
+FOUNDATION_DOCUMENT:
+docs/foundation/KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION.md
+
+FOUNDATION_PILLARS:
+1 PRODUCT_IDENTITY
+2 INPUT_SOURCE_ARCHITECTURE
+3 MEDIA_PROBE
+4 PROCESSING_ENGINE
+5 EXPORT_PROFILE
+6 UI_FOUNDATION
+7 INTERNATIONALIZATION
+8 INTERACTION_AND_ACCESSIBILITY
+9 UI_TESTABILITY
+
+GUI_FRAMEWORK: iced
+GUI_FRAMEWORK_BASELINE: 0.14.0
+ICED_DEFAULT_FEATURES: DISABLED
+ICED_RENDERER_BASELINE: tiny-skia
+RUST_BASELINE: 1.98.1
+CARGO_LOCK_REQUIRED: YES
+BUILD_WITH_LOCKED: YES
+OWNED_IMPLEMENTATION: 100_PERCENT_RUST
+
+UPSTREAM_RTL_LAYOUT_REFERENCE: iced-rs/iced#3303
+BIDIRECTIONAL_LAYOUT: APPLICATION_OWNED_UNTIL_UPSTREAM_CAPABILITY_IS_RELEASED_AND_QUALIFIED
+
+SCREEN_READER_ACCESSIBILITY:
+NOT_CLAIMED_UNTIL_TOOLKIT_SUPPORT_AND_NATIVE_VERIFICATION
+
+WCAG_2_2: DESIGN_REFERENCE
+WCAG2ICT_2_2: NON_WEB_SOFTWARE_GUIDANCE_REFERENCE
+FORMAL_ACCESSIBILITY_CONFORMANCE_CLAIM: NO
+
+CANCELLATION_ARCHITECTURE: SUPPORTED
+CANCELLATION_IMPLEMENTATION_STATUS: NOT_STARTED
+
+G0_ALLOWED_PATHS:
+- docs/foundation/KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION.md
+- PROJECT_STATE.md
+- ACTIVE_TASK.md
+- CURRENT_STATE.md
+
+V3_IMPLEMENTATION: NOT_STARTED
 
 NEXT_SAFE_ACTION:
-This task is closed. Any release/tag/deployment is a separate task.
+Verify exact G0 documentation-only diff, commit/push/PR, qualify exact head, merge and verify
+exact main, then continue to G1 without requesting new owner approval.

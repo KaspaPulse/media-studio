@@ -4,68 +4,109 @@ Updated: 2026-09-24
 Repository: `KaspaPulse/whatsapp-video-preparer`
 Visibility: PUBLIC
 Default branch: `main`
-Active task: `WVP_RUST_STRICT_HARDENING_DELTA` — CLOSED
+Active task: `KASPAPULSE_MEDIA_STUDIO_V3`
+Current phase: `G0 — KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION_FREEZE`
 
-## Qualified technical foundation
-- Rust v2 implementation merge: `feeb43230e688496888a843809333c41a119d35f`
-- Strict hardening PR: #7 — MERGED_SQUASH
-- Qualified technical main SHA: `7c1d608fbd78fed2e0fcc52c30e85a3d9546628f`
-- Qualified technical main tree: `615d24aa0021919cb1c30bb06db56b6bfe36e8e3`
-- Application version: `2.0.0`
+## Actual source baseline
 
-## Strict Rust-owned definition
-The repository standard is:
-- application logic: Rust;
-- automated test logic: Rust;
-- repository-owned build, packaging, validation, and governance logic: Rust;
-- workflow YAML: declarative orchestration only;
-- inline PowerShell/Bash business logic: forbidden;
-- simple `cargo`, `rustup`, and `rustc` workflow invocations: allowed;
-- external Actions: full 40-character commit SHA required.
+- Source base SHA: `2440690ecc1845b79de47550e672d767edbb9393`
+- Source base tree: `b712b1da64b5de3739cc087292d1cb427621a931`
+- Current product: WhatsApp Video Preparer
+- Current version: 2.0.0
+- Target product: KaspaPulse Media Studio
+- Target version: 3.0.0
+- Target repository: `KaspaPulse/media-studio`
+- Repository rename status: DEFERRED
+- V3 implementation: NOT_STARTED
 
-The Rust `xtask verify` gate enforces these restrictions.
+## Historical v2 boundary
 
-## Dependency and supply-chain hardening
-Strict cargo-deny surfaced `RUSTSEC-2026-0253` through the previous `iced_wgpu -> cryoglyph -> lru 0.16.4` path. No advisory ignore was added.
+v2 is immutable historical evidence:
+- v2.0.0 tag: PRESERVE;
+- v2.0.0 GitHub Release: PUBLISHED / PRESERVE;
+- v2 release assets: DO_NOT_RENAME_OR_REPLACE;
+- v2 provenance/SBOM: HISTORICAL_EVIDENCE.
 
-The repository remains on stable `iced 0.14.0` with default features disabled and `tokio,image,tiny-skia` enabled. On the qualified Windows x64, macOS arm64, and macOS x64 target-filtered dependency graphs, `lru`, `cryoglyph`, and `iced_wgpu` are unreachable while `iced_tiny_skia 0.14.1` is present. `Cargo.lock` may retain inactive optional package records.
+Do not rewrite, delete, retag, or replace v2 history while implementing v3.
 
-Lock identity comparison against the pre-hardening baseline:
-- baseline identities: 579;
-- qualified identities: 474;
-- new identities: 0;
-- removed identities: 105.
+## v3 Foundation
 
-`deny.toml` enforces advisories, licenses, bans, and sources across the actual Windows/macOS targets. Final cargo-deny result is PASS with no advisory ignores.
+Canonical Foundation:
+`docs/foundation/KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION.md`
 
-## Workflow and attestation hardening
-The package size regression is orchestrated by Rust `xtask`, not inline PowerShell. Build jobs have least privilege. Main-only attestation jobs use full-SHA-pinned `actions/attest` v4.2.2 and only the permissions needed for provenance/SBOM persistence.
+Nine pillars:
+1. PRODUCT_IDENTITY
+2. INPUT_SOURCE_ARCHITECTURE
+3. MEDIA_PROBE
+4. PROCESSING_ENGINE
+5. EXPORT_PROFILE
+6. UI_FOUNDATION
+7. INTERNATIONALIZATION
+8. INTERACTION_AND_ACCESSIBILITY
+9. UI_TESTABILITY
 
-The initial attestation attempt on the qualified main failed because GitHub did not support persistence for the user-owned private repository. After explicit owner authorization, the repository was changed to PUBLIC. Re-running the same workflow path on the same qualified technical main succeeded without weakening any control.
+Foundation baseline:
+- GUI framework: iced 0.14.0;
+- iced default features: disabled;
+- renderer: tiny-skia;
+- Rust: 1.98.1;
+- Cargo.lock required;
+- qualified builds use --locked;
+- repository-owned implementation remains 100% Rust.
 
-## Verified GitHub evidence
-Exact-head before merge:
-- Rust Policy `35918330368`: SUCCESS;
-- Windows `35918329646`: SUCCESS;
-- macOS `35918329621`: SUCCESS on x64 and arm64.
+RTL layout is application-owned until an upstream capability is released and independently
+qualified. Reference: iced-rs/iced#3303. The application must not depend on that unmerged PR.
 
-Exact-main:
-- Rust Policy `35921197250`: SUCCESS;
-- Windows `35921197316`, attempt 2: SUCCESS, including build provenance and SPDX SBOM attestation;
-- macOS `35921197346`, attempt 2: SUCCESS for x64 and arm64, including build provenance and SPDX SBOM attestation.
+Screen-reader accessibility is not claimed until toolkit support and native verification.
+WCAG 2.2 is a design reference; WCAG2ICT 2.2 is non-web-software guidance. No formal
+accessibility conformance claim is made by the Foundation.
 
-The qualified technical main reports Rust-only GitHub language accounting and zero tracked executable-code files with forbidden Python, PowerShell, shell, JavaScript, TypeScript, CMD, or BAT extensions.
+## G0 scope
 
-## Public transition safety
-Before changing visibility, a heuristic current-tree/history scan found no sensitive key files and no actual private-key, GitHub PAT, AWS access-key, Telegram bot-token, or generic secret-assignment matches. Broad `sk-` matches were inspected and were false positives from `xtask-...` log names.
+G0 is documentation-only.
 
-## Boundaries
-Release, tag, and deployment remain NOT_STARTED. They are not implied by this task closure.
+Allowed:
+- `docs/foundation/KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION.md`
+- `PROJECT_STATE.md`
+- `ACTIVE_TASK.md`
+- `CURRENT_STATE.md`
+
+Forbidden in G0:
+- `src/**`;
+- `tests/**`;
+- Cargo.toml/Cargo.lock mutation;
+- workflow implementation mutation;
+- repository/binary/bundle rename;
+- InputSource implementation;
+- UI implementation.
+
+G0 success requires zero implementation, dependency, and workflow diff from the source base.
 
 ## Continuity
+
 Canonical operation journal:
 `C:\WVP-Rust-Migration-20260923\OPERATION_JOURNAL.md`
 
-Do not repeat completed qualification while its validity predicates hold.
+Execution policy:
+`RECOVER → RECONCILE → CLASSIFY → CONTINUE`
 
-NEXT ACTION: none for `WVP_RUST_STRICT_HARDENING_DELTA`. Treat any release, tag, deployment, or new feature as a new explicitly authorized task.
+After meaningful state transitions:
+`PERSIST → VERIFY → CHECKPOINT → CONTINUE`
+
+Evidence policy:
+- TEST_THE_AFFECTED_SURFACE
+- REUSE_VALID_EVIDENCE
+- RERUN_ONLY_WHEN_INVALIDATED
+- NO_FAKE_PASS
+
+## Current classification
+
+G0 Foundation documentation: IN_PROGRESS
+V3 implementation: NOT_STARTED
+Repository rename: DEFERRED
+v3.0.0 release: NOT_STARTED
+
+NEXT ACTION:
+Finish the G0 documentation-only delta, verify the exact allowed-path diff, commit/push/PR,
+wait for required exact-head checks, merge with no drift, verify exact-main, then proceed
+automatically to G1 under the owner authorization.
