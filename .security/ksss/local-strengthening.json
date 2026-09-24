@@ -1,10 +1,10 @@
 {
   "schema_family": "local-strengthening",
   "schema_version": "1.0.0",
-  "repository": "KaspaPulse/whatsapp-video-preparer",
+  "repository": "KaspaPulse/media-studio",
   "controls": {
     "WVP-SIZE-001": {
-      "requirement": "Every generated clip must be measured after encoding and remain below the configured byte target.",
+      "requirement": "Whenever an export profile configures a target or hard byte limit, each generated output must be measured after processing and satisfy that profile policy; the WhatsApp preset retains its qualified 9.5 MB target and 10 MB hard limit.",
       "target_bytes": 9500000,
       "hard_limit_bytes": 10000000
     },

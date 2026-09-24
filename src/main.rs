@@ -7,29 +7,25 @@ use iced::{
     Alignment, Element, Length, Size, Subscription, Task, Theme, alignment::Horizontal, event,
     system, theme, time, window,
 };
+use media_studio::domain::{AppViewState, InputSource};
+use media_studio::export_profile::{BuiltinExportProfile, ExportProfile, WHATSAPP_TARGET_BYTES};
+use media_studio::i18n::{Language, Strings, UiDirection, strings};
+use media_studio::media::{DEFAULT_SEGMENT_SECONDS, duration_to_seconds, is_valid_url};
+use media_studio::media_probe::MediaMetadata;
+use media_studio::settings::AppSettings;
+use media_studio::ui::app::{BUILTIN_PROFILES, media_summary, profile_label};
+use media_studio::ui::bidi::isolate_ltr;
+use media_studio::ui::direction::{logical_pair, logical_sequence};
+use media_studio::ui::focus::{KeyboardCommand, keyboard_command};
+use media_studio::ui::layout::{LayoutBreakpoints, LayoutClass};
+use media_studio::ui::theme::{ResolvedTheme, ThemePreference, resolved_system_theme};
+use media_studio::ui::tokens::Spacing;
+use media_studio::worker::{PrepareRequest, ProbeEvent, WorkerEvent, spawn, spawn_local_probe};
 use std::fmt;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
-use whatsapp_video_preparer::domain::{AppViewState, InputSource};
-use whatsapp_video_preparer::export_profile::{
-    BuiltinExportProfile, ExportProfile, WHATSAPP_TARGET_BYTES,
-};
-use whatsapp_video_preparer::i18n::{Language, Strings, UiDirection, strings};
-use whatsapp_video_preparer::media::{DEFAULT_SEGMENT_SECONDS, duration_to_seconds, is_valid_url};
-use whatsapp_video_preparer::media_probe::MediaMetadata;
-use whatsapp_video_preparer::settings::AppSettings;
-use whatsapp_video_preparer::ui::app::{BUILTIN_PROFILES, media_summary, profile_label};
-use whatsapp_video_preparer::ui::bidi::isolate_ltr;
-use whatsapp_video_preparer::ui::direction::{logical_pair, logical_sequence};
-use whatsapp_video_preparer::ui::focus::{KeyboardCommand, keyboard_command};
-use whatsapp_video_preparer::ui::layout::{LayoutBreakpoints, LayoutClass};
-use whatsapp_video_preparer::ui::theme::{ResolvedTheme, ThemePreference, resolved_system_theme};
-use whatsapp_video_preparer::ui::tokens::Spacing;
-use whatsapp_video_preparer::worker::{
-    PrepareRequest, ProbeEvent, WorkerEvent, spawn, spawn_local_probe,
-};
 
 fn main() -> iced::Result {
     let icon = window::icon::from_file_data(include_bytes!("../assets/app_icon.png"), None).ok();

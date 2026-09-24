@@ -3,13 +3,13 @@ members = [".", "xtask"]
 resolver = "3"
 
 [package]
-name = "whatsapp-video-preparer"
-version = "2.0.0"
+name = "media-studio"
+version = "3.0.0"
 edition = "2024"
 rust-version = "1.98.1"
-description = "Rust desktop app for preparing size-safe WhatsApp video clips"
+description = "Rust desktop media acquisition, inspection, processing, and export application"
 license = "MIT"
-repository = "https://github.com/KaspaPulse/whatsapp-video-preparer"
+repository = "https://github.com/KaspaPulse/media-studio"
 build = "build.rs"
 
 [dependencies]

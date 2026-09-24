@@ -50,23 +50,23 @@ jobs:
         run: cargo test --workspace --all-targets --locked
 
       - name: Build release executable
-        run: cargo build --release --locked -p whatsapp-video-preparer
+        run: cargo build --release --locked -p media-studio
 
       - name: Package native app with pinned media helpers
-        run: cargo run -p xtask --locked -- package-macos "${{ matrix.helper_platform }}" target/release/whatsapp-video-preparer .artifacts/package
+        run: cargo run -p xtask --locked -- package-macos "${{ matrix.helper_platform }}" target/release/media-studio .artifacts/package
 
       - name: Real size-budget regression test
-        run: cargo run -p xtask --locked -- verify-size-budget-package .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}/WhatsAppVideoPreparer.app
+        run: cargo run -p xtask --locked -- verify-size-budget-package .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}/KaspaPulseMediaStudio.app
 
       - name: Native GUI startup smoke
-        run: cargo run -p xtask --locked -- smoke .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}/WhatsAppVideoPreparer.app/Contents/MacOS/WhatsAppVideoPreparer
+        run: cargo run -p xtask --locked -- smoke .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}/KaspaPulseMediaStudio.app/Contents/MacOS/KaspaPulseMediaStudio
 
       - name: Generate SPDX 2.3 SBOM
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           path: .
           format: spdx-json
-          output-file: .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.spdx.json
+          output-file: .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}.spdx.json
           upload-artifact: false
           upload-release-assets: false
           syft-version: v1.52.0
@@ -74,12 +74,12 @@ jobs:
       - name: Upload qualified macOS bundle
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: WhatsAppVideoPreparer-${{ matrix.helper_platform }}-${{ github.sha }}
+          name: KaspaPulseMediaStudio-${{ matrix.helper_platform }}-${{ github.sha }}
           path: |
-            .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.dmg
-            .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.dmg.sha256
-            .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.spdx.json
-            .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}/SHA256SUMS
+            .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}.dmg
+            .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}.dmg.sha256
+            .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}.spdx.json
+            .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}/SHA256SUMS
           if-no-files-found: error
           retention-days: 14
 
@@ -101,16 +101,16 @@ jobs:
       - name: Download qualified macOS bundle
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: WhatsAppVideoPreparer-${{ matrix.helper_platform }}-${{ github.sha }}
+          name: KaspaPulseMediaStudio-${{ matrix.helper_platform }}-${{ github.sha }}
           path: .artifacts/package
 
       - name: Attest build provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-path: .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.dmg
+          subject-path: .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}.dmg
 
       - name: Attest SPDX SBOM
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-path: .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.dmg
-          sbom-path: .artifacts/package/WhatsAppVideoPreparer-${{ matrix.helper_platform }}.spdx.json
+          subject-path: .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}.dmg
+          sbom-path: .artifacts/package/KaspaPulseMediaStudio-${{ matrix.helper_platform }}.spdx.json

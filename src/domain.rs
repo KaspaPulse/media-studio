@@ -9,14 +9,14 @@ pub struct ProductIdentity {
     pub repository: &'static str,
 }
 
-pub const CURRENT_PRODUCT_IDENTITY: ProductIdentity = ProductIdentity {
+pub const LEGACY_V2_PRODUCT_IDENTITY: ProductIdentity = ProductIdentity {
     publisher: "KaspaPulse",
     product: "WhatsApp Video Preparer",
     version: "2.0.0",
     repository: "KaspaPulse/whatsapp-video-preparer",
 };
 
-pub const TARGET_PRODUCT_IDENTITY: ProductIdentity = ProductIdentity {
+pub const CURRENT_PRODUCT_IDENTITY: ProductIdentity = ProductIdentity {
     publisher: "KaspaPulse",
     product: "KaspaPulse Media Studio",
     version: "3.0.0",
@@ -139,12 +139,13 @@ mod tests {
     use super::*;
 
     #[test]
-    fn product_identity_keeps_current_and_target_distinct() {
-        assert_eq!(CURRENT_PRODUCT_IDENTITY.version, "2.0.0");
-        assert_eq!(TARGET_PRODUCT_IDENTITY.version, "3.0.0");
+    fn product_identity_keeps_v2_history_distinct_from_current_v3_identity() {
+        assert_eq!(LEGACY_V2_PRODUCT_IDENTITY.version, "2.0.0");
+        assert_eq!(CURRENT_PRODUCT_IDENTITY.version, "3.0.0");
+        assert_eq!(CURRENT_PRODUCT_IDENTITY.product, "KaspaPulse Media Studio");
         assert_ne!(
-            CURRENT_PRODUCT_IDENTITY.repository,
-            TARGET_PRODUCT_IDENTITY.repository
+            LEGACY_V2_PRODUCT_IDENTITY.repository,
+            CURRENT_PRODUCT_IDENTITY.repository
         );
     }
 
