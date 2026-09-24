@@ -5,7 +5,7 @@ use iced::keyboard::{Key, Modifiers, key::Named};
 pub enum KeyboardCommand {
     FocusNext,
     FocusPrevious,
-    ActivatePrimary,
+    ActivateFocused,
     DismissTransient,
 }
 
@@ -16,15 +16,22 @@ pub fn keyboard_command(
     repeat: bool,
     status: event::Status,
 ) -> Option<KeyboardCommand> {
-    if repeat || status == event::Status::Captured {
+    if repeat {
+        return None;
+    }
+
+    if matches!(key, Key::Named(Named::Escape)) {
+        return Some(KeyboardCommand::DismissTransient);
+    }
+
+    if status == event::Status::Captured {
         return None;
     }
 
     match key {
         Key::Named(Named::Tab) if modifiers.shift() => Some(KeyboardCommand::FocusPrevious),
         Key::Named(Named::Tab) => Some(KeyboardCommand::FocusNext),
-        Key::Named(Named::Enter) => Some(KeyboardCommand::ActivatePrimary),
-        Key::Named(Named::Escape) => Some(KeyboardCommand::DismissTransient),
+        Key::Named(Named::Enter | Named::Space) => Some(KeyboardCommand::ActivateFocused),
         _ => None,
     }
 }
@@ -71,6 +78,39 @@ impl<const N: usize> FocusOrder<N> {
         let index = self.keys.iter().position(|key| *key == current)?;
         self.keys.get(index.checked_sub(1)?).copied()
     }
+}
+
+#[must_use]
+pub fn cycle_available<T, const N: usize>(
+    order: &[T; N],
+    current: Option<T>,
+    reverse: bool,
+    mut available: impl FnMut(T) -> bool,
+) -> Option<T>
+where
+    T: Copy + PartialEq,
+{
+    if N == 0 {
+        return None;
+    }
+
+    let start = current
+        .and_then(|current| order.iter().position(|candidate| *candidate == current))
+        .unwrap_or_else(|| if reverse { 0 } else { N - 1 });
+
+    for step in 1..=N {
+        let index = if reverse {
+            (start + N - (step % N)) % N
+        } else {
+            (start + step) % N
+        };
+        let candidate = order[index];
+        if available(candidate) {
+            return Some(candidate);
+        }
+    }
+
+    None
 }
 
 #[cfg(test)]
@@ -127,7 +167,16 @@ mod tests {
                 false,
                 event::Status::Ignored,
             ),
-            Some(KeyboardCommand::ActivatePrimary)
+            Some(KeyboardCommand::ActivateFocused)
+        );
+        assert_eq!(
+            keyboard_command(
+                &Key::Named(Named::Space),
+                Modifiers::NONE,
+                false,
+                event::Status::Ignored,
+            ),
+            Some(KeyboardCommand::ActivateFocused)
         );
         assert_eq!(
             keyboard_command(
@@ -156,6 +205,34 @@ mod tests {
             ),
             None
         );
+        assert_eq!(
+            keyboard_command(
+                &Key::Named(Named::Escape),
+                Modifiers::NONE,
+                false,
+                event::Status::Captured,
+            ),
+            Some(KeyboardCommand::DismissTransient)
+        );
+    }
+
+    #[test]
+    fn cycle_available_wraps_and_skips_unavailable_targets() {
+        let order = [1_u8, 2, 3, 4];
+
+        assert_eq!(
+            cycle_available(&order, None, false, |candidate| candidate != 2),
+            Some(1)
+        );
+        assert_eq!(
+            cycle_available(&order, Some(1), false, |candidate| candidate != 2),
+            Some(3)
+        );
+        assert_eq!(
+            cycle_available(&order, Some(3), true, |candidate| candidate != 2),
+            Some(1)
+        );
+        assert_eq!(cycle_available(&order, Some(4), false, |_| false), None);
     }
 
     fn order_keys() -> [&'static str; 3] {

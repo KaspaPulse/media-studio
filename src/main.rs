@@ -17,7 +17,7 @@ use media_studio::settings::AppSettings;
 use media_studio::ui::app::{BUILTIN_PROFILES, media_summary, profile_label};
 use media_studio::ui::bidi::isolate_ltr;
 use media_studio::ui::direction::{logical_pair, logical_sequence};
-use media_studio::ui::focus::{KeyboardCommand, keyboard_command};
+use media_studio::ui::focus::{KeyboardCommand, cycle_available, keyboard_command};
 use media_studio::ui::layout::{LayoutBreakpoints, LayoutClass};
 use media_studio::ui::theme::{ResolvedTheme, ThemePreference, resolved_system_theme};
 use media_studio::ui::tokens::Spacing;
@@ -125,6 +125,46 @@ enum SourceMode {
 const SOURCE_URL_FOCUS_ID: &str = "source-url";
 const DURATION_FOCUS_ID: &str = "duration";
 const OUTPUT_FOCUS_ID: &str = "output";
+const ACTION_FOCUS_SENTINEL_ID: &str = "__media-studio-action-focus__";
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum FocusTarget {
+    Language,
+    Theme,
+    SourceUrl,
+    OpenLocal,
+    ProfileUniversalMp4,
+    ProfileWhatsApp,
+    ProfileHighQuality,
+    ProfileWebCompatible,
+    Duration,
+    DurationUnit,
+    Output,
+    BrowseOutput,
+    Start,
+    OpenSource,
+    OpenClip,
+    OpenFolder,
+}
+
+const SEMANTIC_FOCUS_ORDER: [FocusTarget; 16] = [
+    FocusTarget::Language,
+    FocusTarget::Theme,
+    FocusTarget::SourceUrl,
+    FocusTarget::OpenLocal,
+    FocusTarget::ProfileUniversalMp4,
+    FocusTarget::ProfileWhatsApp,
+    FocusTarget::ProfileHighQuality,
+    FocusTarget::ProfileWebCompatible,
+    FocusTarget::Duration,
+    FocusTarget::DurationUnit,
+    FocusTarget::Output,
+    FocusTarget::BrowseOutput,
+    FocusTarget::Start,
+    FocusTarget::OpenSource,
+    FocusTarget::OpenClip,
+    FocusTarget::OpenFolder,
+];
 
 #[derive(Debug, Clone)]
 enum Message {
@@ -146,7 +186,7 @@ enum Message {
     PollWorkers,
     FocusNext,
     FocusPrevious,
-    ActivatePrimary,
+    ActivateFocused,
     DismissTransient,
 }
 
@@ -170,6 +210,7 @@ struct App {
     last_folder: Option<PathBuf>,
     last_source: Option<PathBuf>,
     last_clip: Option<PathBuf>,
+    semantic_focus: Option<FocusTarget>,
 }
 
 impl Default for App {
@@ -196,6 +237,7 @@ impl Default for App {
             last_folder: None,
             last_source: None,
             last_clip: None,
+            semantic_focus: None,
         }
     }
 }
@@ -225,18 +267,130 @@ impl App {
             SourceMode::RemoteUrl => is_valid_url(&self.url),
         }
     }
+
+    fn focus_target_available(&self, target: FocusTarget) -> bool {
+        let editable = !self.operation_active();
+
+        match target {
+            FocusTarget::Language
+            | FocusTarget::Theme
+            | FocusTarget::SourceUrl
+            | FocusTarget::OpenLocal
+            | FocusTarget::ProfileUniversalMp4
+            | FocusTarget::ProfileWhatsApp
+            | FocusTarget::ProfileHighQuality
+            | FocusTarget::ProfileWebCompatible
+            | FocusTarget::Duration
+            | FocusTarget::DurationUnit
+            | FocusTarget::Output
+            | FocusTarget::BrowseOutput => editable,
+            FocusTarget::Start => self.can_start(),
+            FocusTarget::OpenSource => self.last_source.is_some(),
+            FocusTarget::OpenClip => self.last_clip.is_some(),
+            FocusTarget::OpenFolder => self.last_folder.is_some(),
+        }
+    }
+}
+
+const fn focus_target_for_profile(profile: BuiltinExportProfile) -> FocusTarget {
+    match profile {
+        BuiltinExportProfile::UniversalMp4 => FocusTarget::ProfileUniversalMp4,
+        BuiltinExportProfile::WhatsApp => FocusTarget::ProfileWhatsApp,
+        BuiltinExportProfile::HighQuality => FocusTarget::ProfileHighQuality,
+        BuiltinExportProfile::WebCompatible => FocusTarget::ProfileWebCompatible,
+    }
+}
+
+const fn profile_for_focus_target(target: FocusTarget) -> Option<BuiltinExportProfile> {
+    match target {
+        FocusTarget::ProfileUniversalMp4 => Some(BuiltinExportProfile::UniversalMp4),
+        FocusTarget::ProfileWhatsApp => Some(BuiltinExportProfile::WhatsApp),
+        FocusTarget::ProfileHighQuality => Some(BuiltinExportProfile::HighQuality),
+        FocusTarget::ProfileWebCompatible => Some(BuiltinExportProfile::WebCompatible),
+        _ => None,
+    }
+}
+
+const fn next_duration_unit(unit: DurationUnit) -> DurationUnit {
+    match unit {
+        DurationUnit::Seconds => DurationUnit::Minutes,
+        DurationUnit::Minutes => DurationUnit::Hours,
+        DurationUnit::Hours => DurationUnit::Seconds,
+    }
+}
+
+fn focus_task(target: FocusTarget) -> Task<Message> {
+    match target {
+        FocusTarget::SourceUrl => iced::widget::operation::focus(SOURCE_URL_FOCUS_ID),
+        FocusTarget::Duration => iced::widget::operation::focus(DURATION_FOCUS_ID),
+        FocusTarget::Output => iced::widget::operation::focus(OUTPUT_FOCUS_ID),
+        _ => iced::widget::operation::focus(ACTION_FOCUS_SENTINEL_ID),
+    }
+}
+
+fn move_semantic_focus(app: &mut App, reverse: bool) -> Task<Message> {
+    let next = cycle_available(
+        &SEMANTIC_FOCUS_ORDER,
+        app.semantic_focus,
+        reverse,
+        |candidate| app.focus_target_available(candidate),
+    );
+
+    if let Some(target) = next {
+        app.semantic_focus = Some(target);
+        focus_task(target)
+    } else {
+        app.semantic_focus = None;
+        Task::none()
+    }
+}
+
+fn activate_semantic_focus(app: &mut App) -> Task<Message> {
+    let Some(target) = app.semantic_focus else {
+        if app.can_start() {
+            prepare(app);
+        }
+        return Task::none();
+    };
+
+    if !app.focus_target_available(target) {
+        return Task::none();
+    }
+
+    if let Some(profile) = profile_for_focus_target(target) {
+        app.selected_profile = profile;
+        return Task::none();
+    }
+
+    match target {
+        FocusTarget::Language => toggle_language(app),
+        FocusTarget::Theme => toggle_theme(app),
+        FocusTarget::SourceUrl | FocusTarget::Duration | FocusTarget::Output => {
+            if app.can_start() {
+                prepare(app);
+            }
+        }
+        FocusTarget::OpenLocal => open_local(app),
+        FocusTarget::DurationUnit => app.unit = next_duration_unit(app.unit),
+        FocusTarget::BrowseOutput => browse_output(app),
+        FocusTarget::Start => prepare(app),
+        FocusTarget::OpenSource => open_path(app, app.last_source.clone()),
+        FocusTarget::OpenClip => open_path(app, app.last_clip.clone()),
+        FocusTarget::OpenFolder => open_path(app, app.last_folder.clone()),
+        FocusTarget::ProfileUniversalMp4
+        | FocusTarget::ProfileWhatsApp
+        | FocusTarget::ProfileHighQuality
+        | FocusTarget::ProfileWebCompatible => unreachable!("profile target handled above"),
+    }
+
+    Task::none()
 }
 
 fn update(app: &mut App, message: Message) -> Task<Message> {
     match &message {
-        Message::FocusNext => return iced::widget::operation::focus_next(),
-        Message::FocusPrevious => return iced::widget::operation::focus_previous(),
-        Message::ActivatePrimary => {
-            if app.can_start() {
-                prepare(app);
-            }
-            return Task::none();
-        }
+        Message::FocusNext => return move_semantic_focus(app, false),
+        Message::FocusPrevious => return move_semantic_focus(app, true),
+        Message::ActivateFocused => return activate_semantic_focus(app),
         Message::DismissTransient => {
             dismiss_transient(app);
             return Task::none();
@@ -246,6 +400,7 @@ fn update(app: &mut App, message: Message) -> Task<Message> {
 
     match message {
         Message::UrlChanged(value) => {
+            app.semantic_focus = Some(FocusTarget::SourceUrl);
             if !app.operation_active() {
                 app.url = value;
                 app.source_mode = SourceMode::RemoteUrl;
@@ -256,41 +411,72 @@ fn update(app: &mut App, message: Message) -> Task<Message> {
             }
         }
         Message::OutputChanged(value) => {
+            app.semantic_focus = Some(FocusTarget::Output);
             if !app.operation_active() {
                 app.output = value;
             }
         }
         Message::DurationChanged(value) => {
+            app.semantic_focus = Some(FocusTarget::Duration);
             if !app.operation_active() {
                 app.duration = value;
             }
         }
         Message::UnitSelected(option) => {
+            app.semantic_focus = Some(FocusTarget::DurationUnit);
             if !app.operation_active() {
                 app.unit = option.unit;
             }
         }
         Message::ProfileSelected(profile) => {
+            app.semantic_focus = Some(focus_target_for_profile(profile));
             if !app.operation_active() {
                 app.selected_profile = profile;
             }
         }
-        Message::BrowseOutput => browse_output(app),
-        Message::OpenLocal => open_local(app),
-        Message::FileDropped(path) => select_local_source(app, path),
-        Message::Prepare => prepare(app),
-        Message::ToggleLanguage => toggle_language(app),
-        Message::CycleTheme => toggle_theme(app),
+        Message::BrowseOutput => {
+            app.semantic_focus = Some(FocusTarget::BrowseOutput);
+            browse_output(app);
+        }
+        Message::OpenLocal => {
+            app.semantic_focus = Some(FocusTarget::OpenLocal);
+            open_local(app);
+        }
+        Message::FileDropped(path) => {
+            app.semantic_focus = Some(FocusTarget::OpenLocal);
+            select_local_source(app, path);
+        }
+        Message::Prepare => {
+            app.semantic_focus = Some(FocusTarget::Start);
+            prepare(app);
+        }
+        Message::ToggleLanguage => {
+            app.semantic_focus = Some(FocusTarget::Language);
+            toggle_language(app);
+        }
+        Message::CycleTheme => {
+            app.semantic_focus = Some(FocusTarget::Theme);
+            toggle_theme(app);
+        }
         Message::SystemThemeChanged(mode) => {
             app.system_theme = resolved_system_theme(mode);
         }
-        Message::OpenFolder => open_path(app, app.last_folder.clone()),
-        Message::OpenSource => open_path(app, app.last_source.clone()),
-        Message::OpenClip => open_path(app, app.last_clip.clone()),
+        Message::OpenFolder => {
+            app.semantic_focus = Some(FocusTarget::OpenFolder);
+            open_path(app, app.last_folder.clone());
+        }
+        Message::OpenSource => {
+            app.semantic_focus = Some(FocusTarget::OpenSource);
+            open_path(app, app.last_source.clone());
+        }
+        Message::OpenClip => {
+            app.semantic_focus = Some(FocusTarget::OpenClip);
+            open_path(app, app.last_clip.clone());
+        }
         Message::PollWorkers => poll_workers(app),
         Message::FocusNext
         | Message::FocusPrevious
-        | Message::ActivatePrimary
+        | Message::ActivateFocused
         | Message::DismissTransient => unreachable!("keyboard command handled before state update"),
     }
     Task::none()
@@ -570,7 +756,7 @@ fn runtime_event(
         }) => match keyboard_command(&key, modifiers, repeat, status) {
             Some(KeyboardCommand::FocusNext) => Some(Message::FocusNext),
             Some(KeyboardCommand::FocusPrevious) => Some(Message::FocusPrevious),
-            Some(KeyboardCommand::ActivatePrimary) => Some(Message::ActivatePrimary),
+            Some(KeyboardCommand::ActivateFocused) => Some(Message::ActivateFocused),
             Some(KeyboardCommand::DismissTransient) => Some(Message::DismissTransient),
             None => None,
         },
@@ -617,6 +803,44 @@ fn technical_fragment(language: Language, value: impl AsRef<str>) -> String {
     }
 }
 
+fn focus_button<'a>(
+    app: &App,
+    target: FocusTarget,
+    button: iced::widget::Button<'a, Message>,
+) -> iced::widget::Button<'a, Message> {
+    if app.semantic_focus == Some(target) && app.focus_target_available(target) {
+        button.style(|theme, status| {
+            let mut style = iced::widget::button::primary(theme, status);
+            style.border.width = 2.0;
+            style.border.color = theme.extended_palette().primary.strong.color;
+            style
+        })
+    } else {
+        button
+    }
+}
+
+fn focus_container<'a>(
+    app: &App,
+    target: FocusTarget,
+    content: Element<'a, Message>,
+    width: Length,
+) -> Element<'a, Message> {
+    let focused = app.semantic_focus == Some(target) && app.focus_target_available(target);
+
+    container(content)
+        .width(width)
+        .style(move |theme| {
+            let mut style = iced::widget::container::Style::default();
+            if focused {
+                style.border.width = 2.0;
+                style.border.color = theme.extended_palette().primary.strong.color;
+            }
+            style
+        })
+        .into()
+}
+
 fn source_description(app: &App) -> String {
     match app.source_mode {
         SourceMode::LocalFile => app.local_source.as_ref().map_or_else(
@@ -661,12 +885,19 @@ fn top_bar<'a>(
         .width(Length::Fill)
         .into();
 
-    let language: Element<'a, Message> = button(t.language)
-        .on_press_maybe((!active).then_some(Message::ToggleLanguage))
-        .into();
-    let theme: Element<'a, Message> = button(text(theme_button_label(app, t)))
-        .on_press_maybe((!active).then_some(Message::CycleTheme))
-        .into();
+    let language: Element<'a, Message> = focus_button(
+        app,
+        FocusTarget::Language,
+        button(t.language).on_press_maybe((!active).then_some(Message::ToggleLanguage)),
+    )
+    .into();
+    let theme: Element<'a, Message> = focus_button(
+        app,
+        FocusTarget::Theme,
+        button(text(theme_button_label(app, t)))
+            .on_press_maybe((!active).then_some(Message::CycleTheme)),
+    )
+    .into();
     let [first_control, second_control] = logical_pair(direction, language, theme);
     let controls: Element<'a, Message> = row![first_control, second_control]
         .spacing(Spacing::SM)
@@ -708,9 +939,12 @@ fn source_section<'a>(
         .padding(10)
         .width(Length::Fill)
         .into();
-    let open_local: Element<'a, Message> = button(t.open_local)
-        .on_press_maybe((!active).then_some(Message::OpenLocal))
-        .into();
+    let open_local: Element<'a, Message> = focus_button(
+        app,
+        FocusTarget::OpenLocal,
+        button(t.open_local).on_press_maybe((!active).then_some(Message::OpenLocal)),
+    )
+    .into();
     let [first, second] = logical_pair(direction, url_input, open_local);
     let source_row = row![first, second]
         .spacing(Spacing::SM)
@@ -746,9 +980,13 @@ fn profile_section<'a>(
     let buttons: Vec<Element<'a, Message>> = BUILTIN_PROFILES
         .into_iter()
         .map(|profile| {
-            button(text(profile_button_label(app, t, profile)))
-                .on_press_maybe((!active).then_some(Message::ProfileSelected(profile)))
-                .into()
+            focus_button(
+                app,
+                focus_target_for_profile(profile),
+                button(text(profile_button_label(app, t, profile)))
+                    .on_press_maybe((!active).then_some(Message::ProfileSelected(profile))),
+            )
+            .into()
         })
         .collect();
     let buttons = logical_sequence(direction, buttons);
@@ -784,13 +1022,18 @@ fn profile_section<'a>(
         .padding(10)
         .width(Length::FillPortion(2))
         .into();
-    let unit_pick: Element<'a, Message> = pick_list(
-        duration_options(t),
-        Some(duration_option(t, app.unit)),
-        Message::UnitSelected,
-    )
-    .width(Length::FillPortion(1))
-    .into();
+    let unit_pick: Element<'a, Message> = focus_container(
+        app,
+        FocusTarget::DurationUnit,
+        pick_list(
+            duration_options(t),
+            Some(duration_option(t, app.unit)),
+            Message::UnitSelected,
+        )
+        .width(Length::Fill)
+        .into(),
+        Length::FillPortion(1),
+    );
     let [first_duration, second_duration] = logical_pair(direction, duration_input, unit_pick);
     let duration_row = row![first_duration, second_duration]
         .spacing(Spacing::SM)
@@ -829,9 +1072,12 @@ fn output_section<'a>(
         .padding(10)
         .width(Length::Fill)
         .into();
-    let browse_button: Element<'a, Message> = button(t.browse)
-        .on_press_maybe((!active).then_some(Message::BrowseOutput))
-        .into();
+    let browse_button: Element<'a, Message> = focus_button(
+        app,
+        FocusTarget::BrowseOutput,
+        button(t.browse).on_press_maybe((!active).then_some(Message::BrowseOutput)),
+    )
+    .into();
     let [first, second] = logical_pair(direction, output_input, browse_button);
 
     card(
@@ -848,10 +1094,14 @@ fn output_section<'a>(
 }
 
 fn action_section<'a>(app: &'a App, t: &'static Strings) -> Element<'a, Message> {
-    button(t.prepare)
-        .on_press_maybe(app.can_start().then_some(Message::Prepare))
-        .width(Length::Fill)
-        .into()
+    focus_button(
+        app,
+        FocusTarget::Start,
+        button(t.prepare)
+            .on_press_maybe(app.can_start().then_some(Message::Prepare))
+            .width(Length::Fill),
+    )
+    .into()
 }
 
 fn result_section<'a>(
@@ -860,15 +1110,26 @@ fn result_section<'a>(
     direction: UiDirection,
 ) -> Element<'a, Message> {
     let buttons: Vec<Element<'a, Message>> = vec![
-        button(t.open_source)
-            .on_press_maybe(app.last_source.as_ref().map(|_| Message::OpenSource))
-            .into(),
-        button(t.open_clip)
-            .on_press_maybe(app.last_clip.as_ref().map(|_| Message::OpenClip))
-            .into(),
-        button(t.open_folder)
-            .on_press_maybe(app.last_folder.as_ref().map(|_| Message::OpenFolder))
-            .into(),
+        focus_button(
+            app,
+            FocusTarget::OpenSource,
+            button(t.open_source)
+                .on_press_maybe(app.last_source.as_ref().map(|_| Message::OpenSource)),
+        )
+        .into(),
+        focus_button(
+            app,
+            FocusTarget::OpenClip,
+            button(t.open_clip).on_press_maybe(app.last_clip.as_ref().map(|_| Message::OpenClip)),
+        )
+        .into(),
+        focus_button(
+            app,
+            FocusTarget::OpenFolder,
+            button(t.open_folder)
+                .on_press_maybe(app.last_folder.as_ref().map(|_| Message::OpenFolder)),
+        )
+        .into(),
     ];
 
     iced::widget::Row::with_children(logical_sequence(direction, buttons))
