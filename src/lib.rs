@@ -1,6 +1,7 @@
 pub mod acquisition;
 pub mod domain;
 pub mod downloader;
+pub mod export_profile;
 pub mod i18n;
 pub mod media;
 pub mod media_probe;

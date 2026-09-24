@@ -355,20 +355,21 @@ fn verify_dependency_policy(root: &Path) -> Result<()> {
 }
 
 fn verify_size_budget(root: &Path) -> Result<()> {
-    let source = fs::read_to_string(root.join("src/media.rs"))?;
-    let hard = parse_u64_const(&source, "WHATSAPP_LIMIT_BYTES")?;
-    let target = parse_u64_const(&source, "DEFAULT_TARGET_BYTES")?;
+    let profile_source = fs::read_to_string(root.join("src/export_profile.rs"))?;
+    let media_source = fs::read_to_string(root.join("src/media.rs"))?;
+    let hard = parse_u64_const(&profile_source, "WHATSAPP_HARD_LIMIT_BYTES")?;
+    let target = parse_u64_const(&profile_source, "WHATSAPP_TARGET_BYTES")?;
     ensure!(
         hard == 10_000_000,
         "WhatsApp hard limit must be 10,000,000 bytes"
     );
     ensure!(
         target == 9_500_000,
-        "default target must retain the 5% safety margin"
+        "WhatsApp target must retain the 5% safety margin"
     );
     ensure!(target < hard, "target must be below the hard limit");
     ensure!(
-        source.contains("fs::metadata(output)?.len()"),
+        media_source.contains("fs::metadata(output)?.len()"),
         "encoded clip size must be measured from the actual output"
     );
     Ok(())

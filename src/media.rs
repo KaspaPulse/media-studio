@@ -5,10 +5,11 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use url::Url;
 
-pub const DEFAULT_SEGMENT_SECONDS: f64 = 29.0;
-pub const WHATSAPP_LIMIT_BYTES: u64 = 10_000_000;
-pub const DEFAULT_TARGET_BYTES: u64 = 9_500_000;
-const _: () = assert!(DEFAULT_TARGET_BYTES < WHATSAPP_LIMIT_BYTES);
+pub use crate::export_profile::{
+    WHATSAPP_HARD_LIMIT_BYTES as WHATSAPP_LIMIT_BYTES,
+    WHATSAPP_MAX_SEGMENT_SECONDS as DEFAULT_SEGMENT_SECONDS,
+    WHATSAPP_TARGET_BYTES as DEFAULT_TARGET_BYTES,
+};
 const AUDIO_KBPS: u32 = 128;
 const MIN_VIDEO_KBPS: u32 = 180;
 const MAX_VIDEO_KBPS: u32 = 8_000;
