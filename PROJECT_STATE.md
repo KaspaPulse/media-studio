@@ -5,7 +5,7 @@ Repository: `KaspaPulse/whatsapp-video-preparer`
 Visibility: PUBLIC
 Default branch: `main`
 Active task: `KASPAPULSE_MEDIA_STUDIO_V3`
-Current phase: `G5 — PROCESSING ENGINE DECOUPLING`
+Current phase: `G6 — UI DESIGN SYSTEM`
 
 ## Product boundary
 CURRENT_PRODUCT=WhatsApp Video Preparer
@@ -35,22 +35,27 @@ WhatsApp policy source of truth is now `src/export_profile.rs`; v2 constant name
 Built-ins: Universal MP4, WhatsApp, High Quality, Web Compatible. Custom profile architecture is validated.
 Affected profile/media/xtask qualification PASS.
 
-## Current phase — G5 Processing Engine Decoupling
-Goal: processing consumes a prepared source path + ExportProfile, not acquisition provenance.
+G5_PROCESSING_ENGINE_DECOUPLING=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G5_CHECKPOINT_SHA=`33e3d93c594081f0050496bcaff02de5f881af28`
+Processing now consumes an acquired media path plus ExportProfile and is independent of acquisition provenance.
+MediaProbe drives remux/transcode decisions; compatible general media can remux, incompatible media transcodes, and size-constrained profiles keep bounded post-encode verification.
+Current v2 UI behavior is preserved by constructing a validated WhatsApp profile.
+Affected processing/media integration qualification PASS under OP-0099.
+
+## Current phase — G6 UI Design System
+Goal: establish the reusable Rust-owned UI foundation required before the v3 main screen.
 
 Required:
-- ProcessingEngine is source-independent;
-- MediaProbe informs remux/transcode choice;
-- remux when safe and sufficient;
-- transcode when required;
-- preserve aspect ratio;
-- no accidental upscale;
-- size/duration/resolution constraints come from ExportProfile;
-- bounded output verification and deterministic failure;
-- current v2 UI continues to use a WhatsApp profile until G7.
+- locale-aware logical layout primitives rather than ad-hoc RTL branches;
+- UiDirection / MirrorPolicy / semantic focus foundations from the frozen contract;
+- design tokens and semantic theme primitives;
+- System / Light / Dark theme preference architecture;
+- BiDi isolation helpers for mixed Arabic/technical values;
+- reusable direction-aware components where appropriate;
+- UI testability hooks/IDs where supported by the iced baseline;
+- preserve the current v2 screen behavior until G7 replaces the screen.
 
-G5 may refactor worker request to carry ExportProfile.
-G5 must not implement the final v3 screen.
+G6 must not implement the final v3 main screen, repository rename, or release identity migration.
 
 ## Baselines
 GUI_FRAMEWORK=iced
@@ -70,4 +75,4 @@ Policies:
 `TEST_THE_AFFECTED_SURFACE / REUSE_VALID_EVIDENCE / RERUN_ONLY_WHEN_INVALIDATED / NO_FAKE_PASS`
 
 NEXT ACTION:
-Implement and qualify G5 ProcessingEngine while preserving current v2 WhatsApp behavior.
+Read the frozen Foundation UI contracts, then implement and qualify the bounded G6 Rust UI design-system foundation without replacing the v2 main screen.

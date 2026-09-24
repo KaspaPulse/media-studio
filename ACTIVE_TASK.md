@@ -7,7 +7,7 @@ KASPAPULSE_MEDIA_STUDIO_V3
 IN_PROGRESS
 
 ## Current phase
-G5 — PROCESSING ENGINE DECOUPLING
+G6 — UI DESIGN SYSTEM
 
 ## Completed
 G0_FOUNDATION_FREEZE=PASS
@@ -15,26 +15,28 @@ G1_PRODUCT_DOMAIN_MODEL=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 G2_SOURCE_ACQUISITION=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 G3_MEDIA_PROBE=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 G4_EXPORT_PROFILES=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G5_PROCESSING_ENGINE_DECOUPLING=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 
-G4 checkpoint:
-`9a4acb9740829b64ea4b032e9995292a40b59786`
+G5 checkpoint:
+`33e3d93c594081f0050496bcaff02de5f881af28`
 
-## G5 objective
-Create a source-independent ProcessingEngine that accepts an acquired media path and ExportProfile.
+## G6 objective
+Create the reusable Rust-owned UI design-system foundation required by the frozen v3 contract while preserving the current v2 main screen until G7.
 
 Required decisions:
-- use MediaProbe metadata before processing;
-- remux compatible media when constraints already hold;
-- transcode otherwise;
-- use profile limits for size, segment duration, long edge, pixel format, codec/container;
-- preserve aspect ratio and avoid upscaling;
-- verify actual outputs after processing;
-- keep the current v2 UI behavior by constructing a WhatsApp profile from its existing controls.
+- logical locale-aware layout primitives;
+- UiDirection and MirrorPolicy foundations;
+- semantic focus-order foundations;
+- BiDi isolation helpers for mixed Arabic/technical content;
+- design tokens and semantic component styles;
+- System / Light / Dark theme preference architecture;
+- testability hooks where supported by iced 0.14.0;
+- no screen-reader support claim without native toolkit support and verification.
 
-No G6/G7 final UI implementation in this phase.
+No G7 final main-screen implementation, repository rename, or release mutation in this phase.
 
 ## Do not repeat
-Do not replay G0-G4 qualification while relevant predicates remain unchanged.
+Do not replay G0-G5 qualification while relevant predicates remain unchanged.
 
 ## Next safe action
-Implement the bounded ProcessingEngine refactor and focused unit tests; then affected-surface qualification.
+Read the frozen UI contracts, implement the bounded G6 design-system foundation, and run affected-surface Rust/UI qualification only.
