@@ -1,7 +1,8 @@
 #![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
 
 use iced::widget::{
-    button, column, container, pick_list, progress_bar, responsive, row, text, text_input,
+    button, column, container, pick_list, progress_bar, responsive, row, scrollable, text,
+    text_input,
 };
 use iced::{
     Alignment, Element, Length, Size, Subscription, Task, Theme, alignment::Horizontal, event,
@@ -652,6 +653,7 @@ fn top_bar<'a>(
     t: &'static Strings,
     active: bool,
     direction: UiDirection,
+    layout: LayoutClass,
 ) -> Element<'a, Message> {
     let title: Element<'a, Message> = column![text(t.title).size(30), text(t.subtitle).size(15)]
         .spacing(4)
@@ -671,12 +673,26 @@ fn top_bar<'a>(
         .align_y(Alignment::Center)
         .into();
 
-    let [first, second] = logical_pair(direction, title, controls);
-    row![first, second]
-        .spacing(Spacing::LG)
-        .align_y(Alignment::Center)
-        .width(Length::Fill)
-        .into()
+    if layout == LayoutClass::Wide {
+        let [first, second] = logical_pair(direction, title, controls);
+        row![first, second]
+            .spacing(Spacing::LG)
+            .align_y(Alignment::Center)
+            .width(Length::Fill)
+            .into()
+    } else {
+        let horizontal = match direction {
+            UiDirection::Ltr => Horizontal::Left,
+            UiDirection::Rtl => Horizontal::Right,
+        };
+        let controls = container(controls).width(Length::Fill).align_x(horizontal);
+
+        column![title, controls]
+            .spacing(Spacing::SM)
+            .align_x(logical_alignment(direction))
+            .width(Length::Fill)
+            .into()
+    }
 }
 
 fn source_section<'a>(
@@ -736,15 +752,29 @@ fn profile_section<'a>(
         })
         .collect();
     let buttons = logical_sequence(direction, buttons);
-    let profile_picker: Element<'a, Message> = if layout == LayoutClass::Compact {
-        iced::widget::Column::with_children(buttons)
+    let profile_picker: Element<'a, Message> = match layout {
+        LayoutClass::Compact => iced::widget::Column::with_children(buttons)
             .spacing(Spacing::SM)
             .width(Length::Fill)
-            .into()
-    } else {
-        iced::widget::Row::with_children(buttons)
+            .into(),
+        LayoutClass::Standard => {
+            let mut buttons = buttons.into_iter();
+            let first_row: Element<'a, Message> =
+                iced::widget::Row::with_children(buttons.by_ref().take(2))
+                    .spacing(Spacing::SM)
+                    .into();
+            let second_row: Element<'a, Message> = iced::widget::Row::with_children(buttons)
+                .spacing(Spacing::SM)
+                .into();
+
+            column![first_row, second_row]
+                .spacing(Spacing::SM)
+                .width(Length::Fill)
+                .into()
+        }
+        LayoutClass::Wide => iced::widget::Row::with_children(buttons)
             .spacing(Spacing::SM)
-            .into()
+            .into(),
     };
 
     let duration_input: Element<'a, Message> = text_input("", &app.duration)
@@ -867,7 +897,7 @@ fn screen_content<'a>(
     layout: LayoutClass,
 ) -> Element<'a, Message> {
     let direction = app.language.direction();
-    let top = top_bar(app, t, active, direction);
+    let top = top_bar(app, t, active, direction, layout);
     let action = action_section(app, t);
     let status = status_section(app);
     let results = result_section(app, t, direction);
@@ -926,7 +956,17 @@ fn view(app: &App) -> Element<'_, Message> {
             LayoutClass::Standard | LayoutClass::Wide => Spacing::XL,
         };
 
-        container(screen_content(app, t, active, layout))
+        let screen = screen_content(app, t, active, layout);
+        let screen: Element<'_, Message> = if layout == LayoutClass::Compact {
+            container(screen)
+                .padding(Spacing::SM)
+                .width(Length::Fill)
+                .into()
+        } else {
+            screen
+        };
+
+        container(scrollable(screen).width(Length::Fill).height(Length::Fill))
             .padding(padding)
             .width(Length::Fill)
             .height(Length::Fill)
