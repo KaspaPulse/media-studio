@@ -7,33 +7,34 @@ KASPAPULSE_MEDIA_STUDIO_V3
 IN_PROGRESS
 
 ## Current phase
-G4 — EXPORT PROFILES
+G5 — PROCESSING ENGINE DECOUPLING
 
 ## Completed
 G0_FOUNDATION_FREEZE=PASS
 G1_PRODUCT_DOMAIN_MODEL=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 G2_SOURCE_ACQUISITION=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 G3_MEDIA_PROBE=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G4_EXPORT_PROFILES=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
 
-G3 checkpoint:
-`dcc5006f3feff0e431dac271ddd4fcab3d7e1f64`
+G4 checkpoint:
+`9a4acb9740829b64ea4b032e9995292a40b59786`
 
-## G4 objective
-Introduce a Rust ExportProfile model with built-in Universal MP4, WhatsApp, High Quality,
-and Web Compatible presets plus a validated Custom architecture.
+## G5 objective
+Create a source-independent ProcessingEngine that accepts an acquired media path and ExportProfile.
 
-Move WhatsApp size/duration/resolution source-of-truth policy out of generic media policy.
-Keep the old v2 public constant names only as temporary compatibility aliases until G5.
+Required decisions:
+- use MediaProbe metadata before processing;
+- remux compatible media when constraints already hold;
+- transcode otherwise;
+- use profile limits for size, segment duration, long edge, pixel format, codec/container;
+- preserve aspect ratio and avoid upscaling;
+- verify actual outputs after processing;
+- keep the current v2 UI behavior by constructing a WhatsApp profile from its existing controls.
 
-Update repository-owned Rust validation so the WhatsApp size policy is validated at its new
-source of truth. Do not weaken the 10,000,000-byte hard limit or 9,500,000-byte target.
+No G6/G7 final UI implementation in this phase.
 
-## Constraints
-No dependency/workflow mutation.
-No final UI work.
-No repository rename.
-No G5 processing behavior change beyond compatibility aliases.
+## Do not repeat
+Do not replay G0-G4 qualification while relevant predicates remain unchanged.
 
 ## Next safe action
-Implement export_profile.rs, compatibility aliases, and the smallest xtask validator migration;
-then run affected Rust/profile/validator qualification.
+Implement the bounded ProcessingEngine refactor and focused unit tests; then affected-surface qualification.
