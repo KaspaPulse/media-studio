@@ -5,8 +5,8 @@ fn main() {
     {
         let mut resource = winresource::WindowsResource::new();
         resource.set_icon("assets/app_icon.ico");
-        resource.set("ProductName", "WhatsApp Video Preparer");
-        resource.set("FileDescription", "WhatsApp Video Preparer");
+        resource.set("ProductName", "KaspaPulse Media Studio");
+        resource.set("FileDescription", "KaspaPulse Media Studio");
         resource.set("CompanyName", "KaspaPulse");
         resource.set("LegalCopyright", "KaspaPulse");
         resource

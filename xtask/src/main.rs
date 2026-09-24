@@ -8,7 +8,11 @@ use std::io::{BufReader, Read};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-const REPOSITORY: &str = "KaspaPulse/whatsapp-video-preparer";
+const REPOSITORY: &str = "KaspaPulse/media-studio";
+const PRODUCT_DISPLAY_NAME: &str = "KaspaPulse Media Studio";
+const PRODUCT_BUNDLE_NAME: &str = "KaspaPulseMediaStudio";
+const PRODUCT_VERSION: &str = "3.0.0";
+const PRODUCT_BUNDLE_ID: &str = "com.kaspapulse.media-studio";
 const KSSS_RELEASE: &str = "v1.2.0";
 const KSSS_SOURCE_SHA: &str = "967ed5068947a39961d5d5cc483ef65d25a61059";
 const KSSS_POLICY_BUNDLE: &str = "3c1c8b449d736aba5fec5cffd688496b06d81f287f55fff4c3f42e36c3b58ec6";
@@ -41,6 +45,12 @@ fn main() -> Result<()> {
                 .next()
                 .context("verify-size-budget-package requires a package root")?;
             verify_size_budget_package(&package)
+        }
+        Some("verify-v3-package") => {
+            let package = args
+                .next()
+                .context("verify-v3-package requires a package root or app bundle")?;
+            verify_v3_package(&package)
         }
         Some("package-windows") => {
             let binary = args.next().context("package-windows requires a binary")?;
@@ -79,10 +89,10 @@ fn verify_repository() -> Result<()> {
     verify_ksss(&root)?;
     verify_helper_manifest(&root)?;
     verify_dependency_policy(&root)?;
-    println!("WVP_REPOSITORY_GATE=PASS");
+    println!("MEDIA_STUDIO_REPOSITORY_GATE=PASS");
     println!("RUST_OWNED_IMPLEMENTATION=100_PERCENT");
     println!("KSSS_RELEASE={KSSS_RELEASE}");
-    println!("WHATSAPP_SIZE_POLICY=PASS");
+    println!("WHATSAPP_PROFILE_SIZE_POLICY=PASS");
     println!("WORKFLOW_DECLARATIVE_ORCHESTRATION_ONLY=PASS");
     println!("RUST_ONLY_GATE=STRICT_PASS");
     println!("CARGO_DENY_POLICY=PASS version={CARGO_DENY_VERSION}");
@@ -96,6 +106,7 @@ fn verify_required_files(root: &Path) -> Result<()> {
         "rust-toolchain.toml",
         "src/main.rs",
         "src/media.rs",
+        "tests/v3_native.rs",
         "xtask/Cargo.toml",
         "deny.toml",
         ".github/workflows/rust-policy.yml",
@@ -355,20 +366,21 @@ fn verify_dependency_policy(root: &Path) -> Result<()> {
 }
 
 fn verify_size_budget(root: &Path) -> Result<()> {
-    let source = fs::read_to_string(root.join("src/media.rs"))?;
-    let hard = parse_u64_const(&source, "WHATSAPP_LIMIT_BYTES")?;
-    let target = parse_u64_const(&source, "DEFAULT_TARGET_BYTES")?;
+    let profile_source = fs::read_to_string(root.join("src/export_profile.rs"))?;
+    let media_source = fs::read_to_string(root.join("src/media.rs"))?;
+    let hard = parse_u64_const(&profile_source, "WHATSAPP_HARD_LIMIT_BYTES")?;
+    let target = parse_u64_const(&profile_source, "WHATSAPP_TARGET_BYTES")?;
     ensure!(
         hard == 10_000_000,
         "WhatsApp hard limit must be 10,000,000 bytes"
     );
     ensure!(
         target == 9_500_000,
-        "default target must retain the 5% safety margin"
+        "WhatsApp target must retain the 5% safety margin"
     );
     ensure!(target < hard, "target must be below the hard limit");
     ensure!(
-        source.contains("fs::metadata(output)?.len()"),
+        media_source.contains("fs::metadata(output)?.len()"),
         "encoded clip size must be measured from the actual output"
     );
     Ok(())
@@ -606,7 +618,7 @@ fn fetch_helpers(platform: &str, destination: &str) -> Result<()> {
     fs::create_dir_all(&destination)
         .with_context(|| format!("failed to create {}", destination.display()))?;
     let client = reqwest::blocking::Client::builder()
-        .user_agent("KaspaPulse-whatsapp-video-preparer-xtask/2.0.0")
+        .user_agent("KaspaPulse-media-studio-xtask/3.0.0")
         .build()
         .context("failed to construct helper download client")?;
     for asset in assets {
@@ -734,6 +746,64 @@ fn resolve_repo_path(value: &str) -> PathBuf {
     }
 }
 
+fn verify_v3_package(package: &str) -> Result<()> {
+    let platform =
+        current_platform().context("v3 package verification requires a supported runner")?;
+    let package = resolve_repo_path(package);
+    ensure!(
+        package.is_dir(),
+        "v3 package root or app bundle missing: {}",
+        package.display()
+    );
+
+    let resources = if platform == "windows-x64" {
+        package.join("resources")
+    } else {
+        package.join("Contents/Resources")
+    };
+    verify_packaged_helpers(platform, &resources)?;
+
+    let ffmpeg = resources.join(if platform == "windows-x64" {
+        "ffmpeg.exe"
+    } else {
+        "ffmpeg"
+    });
+    let ffprobe = resources.join(if platform == "windows-x64" {
+        "ffprobe.exe"
+    } else {
+        "ffprobe"
+    });
+    let ytdlp = resources.join(if platform == "windows-x64" {
+        "yt-dlp.exe"
+    } else {
+        "yt-dlp"
+    });
+
+    let cargo = env::var_os("CARGO").unwrap_or_else(|| "cargo".into());
+    let mut command = Command::new(cargo);
+    command
+        .current_dir(repo_root())
+        .args([
+            "test",
+            "--locked",
+            "--test",
+            "v3_native",
+            "--",
+            "--ignored",
+            "--nocapture",
+        ])
+        .env("MEDIA_STUDIO_FFMPEG", &ffmpeg)
+        .env("MEDIA_STUDIO_FFPROBE", &ffprobe)
+        .env("MEDIA_STUDIO_YTDLP", &ytdlp);
+    run_checked(&mut command)?;
+
+    println!(
+        "V3_NATIVE_PACKAGE_TEST=PASS platform={platform} package={}",
+        package.display()
+    );
+    Ok(())
+}
+
 fn verify_size_budget_package(package: &str) -> Result<()> {
     let platform = current_platform()
         .context("size-budget package verification requires a supported runner")?;
@@ -835,7 +905,7 @@ fn package_windows(binary: &str, output: &str) -> Result<()> {
         output.display()
     );
     fs::create_dir_all(output.join("resources"))?;
-    fs::copy(&binary, output.join("WhatsAppVideoPreparer.exe"))?;
+    fs::copy(&binary, output.join(format!("{PRODUCT_BUNDLE_NAME}.exe")))?;
     let resources = output.join("resources");
     fetch_helpers("windows-x64", &resources.to_string_lossy())?;
     write_sha256sums(&output)?;
@@ -859,18 +929,18 @@ fn package_macos(platform: &str, binary: &str, dist: &str) -> Result<()> {
     );
     let dist = resolve_repo_path(dist);
     fs::create_dir_all(&dist)?;
-    let package_root = dist.join(format!("WhatsAppVideoPreparer-{platform}"));
+    let package_root = dist.join(format!("{PRODUCT_BUNDLE_NAME}-{platform}"));
     ensure!(
         !package_root.exists(),
         "package output already exists: {}",
         package_root.display()
     );
-    let app = package_root.join("WhatsAppVideoPreparer.app");
+    let app = package_root.join(format!("{PRODUCT_BUNDLE_NAME}.app"));
     let macos = app.join("Contents/MacOS");
     let resources = app.join("Contents/Resources");
     fs::create_dir_all(&macos)?;
     fs::create_dir_all(&resources)?;
-    let app_binary = macos.join("WhatsAppVideoPreparer");
+    let app_binary = macos.join(PRODUCT_BUNDLE_NAME);
     fs::copy(&binary, &app_binary)?;
     set_executable(&app_binary)?;
     fs::copy(
@@ -878,23 +948,25 @@ fn package_macos(platform: &str, binary: &str, dist: &str) -> Result<()> {
         resources.join("app_icon.icns"),
     )?;
     fetch_helpers(platform, &resources.to_string_lossy())?;
-    let plist = r#"<?xml version="1.0" encoding="UTF-8"?>
+    let plist = format!(
+        r#"<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleDisplayName</key><string>WhatsApp Video Preparer</string>
-  <key>CFBundleExecutable</key><string>WhatsAppVideoPreparer</string>
-  <key>CFBundleIdentifier</key><string>com.kaspapulse.whatsapp-video-preparer</string>
+  <key>CFBundleDisplayName</key><string>{PRODUCT_DISPLAY_NAME}</string>
+  <key>CFBundleExecutable</key><string>{PRODUCT_BUNDLE_NAME}</string>
+  <key>CFBundleIdentifier</key><string>{PRODUCT_BUNDLE_ID}</string>
   <key>CFBundleIconFile</key><string>app_icon.icns</string>
-  <key>CFBundleName</key><string>WhatsApp Video Preparer</string>
+  <key>CFBundleName</key><string>{PRODUCT_DISPLAY_NAME}</string>
   <key>CFBundlePackageType</key><string>APPL</string>
-  <key>CFBundleShortVersionString</key><string>2.0.0</string>
-  <key>CFBundleVersion</key><string>2.0.0</string>
+  <key>CFBundleShortVersionString</key><string>{PRODUCT_VERSION}</string>
+  <key>CFBundleVersion</key><string>{PRODUCT_VERSION}</string>
   <key>LSMinimumSystemVersion</key><string>12.0</string>
   <key>NSHighResolutionCapable</key><true/>
 </dict>
 </plist>
-"#;
+"#
+    );
     fs::write(app.join("Contents/Info.plist"), plist)?;
     run_checked(
         Command::new("codesign")
@@ -907,23 +979,18 @@ fn package_macos(platform: &str, binary: &str, dist: &str) -> Result<()> {
             .arg(&app),
     )?;
     write_sha256sums(&package_root)?;
-    let dmg = dist.join(format!("WhatsAppVideoPreparer-{platform}.dmg"));
+    let dmg = dist.join(format!("{PRODUCT_BUNDLE_NAME}-{platform}.dmg"));
     ensure!(!dmg.exists(), "DMG already exists: {}", dmg.display());
     run_checked(
         Command::new("hdiutil")
-            .args([
-                "create",
-                "-volname",
-                "WhatsApp Video Preparer",
-                "-srcfolder",
-            ])
+            .args(["create", "-volname", PRODUCT_DISPLAY_NAME, "-srcfolder"])
             .arg(&app)
             .args(["-format", "UDZO"])
             .arg(&dmg),
     )?;
     let digest = sha256_file(&dmg)?;
     fs::write(
-        dist.join(format!("WhatsAppVideoPreparer-{platform}.dmg.sha256")),
+        dist.join(format!("{PRODUCT_BUNDLE_NAME}-{platform}.dmg.sha256")),
         format!(
             "{digest}  {}\n",
             dmg.file_name().unwrap_or_default().to_string_lossy()

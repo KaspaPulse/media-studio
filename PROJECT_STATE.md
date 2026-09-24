@@ -1,112 +1,147 @@
 # PROJECT STATE
 
 Updated: 2026-09-24
-Repository: `KaspaPulse/whatsapp-video-preparer`
+Repository: `KaspaPulse/media-studio`
 Visibility: PUBLIC
 Default branch: `main`
 Active task: `KASPAPULSE_MEDIA_STUDIO_V3`
-Current phase: `G0 — KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION_FREEZE`
+Current phase: `G8 — NATIVE QUALIFICATION`
 
-## Actual source baseline
+## Product boundary
+CURRENT_PRODUCT=KaspaPulse Media Studio
+CURRENT_VERSION=3.0.0
+CURRENT_RELEASE_STATUS=DEVELOPMENT_CANDIDATE_NOT_PUBLISHED
+CURRENT_REPOSITORY=KaspaPulse/media-studio
+TARGET_PRODUCT=KaspaPulse Media Studio
+TARGET_VERSION=3.0.0
+TARGET_REPOSITORY=KaspaPulse/media-studio
+REPOSITORY_RENAME_STATUS=VERIFIED_SUCCESS
+V2_HISTORICAL_BOUNDARY=IMMUTABLE
 
-- Source base SHA: `2440690ecc1845b79de47550e672d767edbb9393`
-- Source base tree: `b712b1da64b5de3739cc087292d1cb427621a931`
-- Current product: WhatsApp Video Preparer
-- Current version: 2.0.0
-- Target product: KaspaPulse Media Studio
-- Target version: 3.0.0
-- Target repository: `KaspaPulse/media-studio`
-- Repository rename status: DEFERRED
-- V3 implementation: NOT_STARTED
+## Completed and verified
+G0_FOUNDATION_FREEZE=PASS
+G0_FINAL_MAIN_SHA=`27c68ff509477d53e454a4f6f80b7eeffb8e7d15`
 
-## Historical v2 boundary
+G1_PRODUCT_DOMAIN_MODEL=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G1_CHECKPOINT_SHA=`6270f011ef293482063573bc5f97a2574b502f2a`
 
-v2 is immutable historical evidence:
-- v2.0.0 tag: PRESERVE;
-- v2.0.0 GitHub Release: PUBLISHED / PRESERVE;
-- v2 release assets: DO_NOT_RENAME_OR_REPLACE;
-- v2 provenance/SBOM: HISTORICAL_EVIDENCE.
+G2_SOURCE_ACQUISITION=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G2_CHECKPOINT_SHA=`59540f352f1f66f5dd07a79d52c0ab5a74015888`
 
-Do not rewrite, delete, retag, or replace v2 history while implementing v3.
+G3_MEDIA_PROBE=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G3_CHECKPOINT_SHA=`dcc5006f3feff0e431dac271ddd4fcab3d7e1f64`
 
-## v3 Foundation
+G4_EXPORT_PROFILES=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G4_CHECKPOINT_SHA=`9a4acb9740829b64ea4b032e9995292a40b59786`
+WhatsApp policy source of truth is now `src/export_profile.rs`; v2 constant names are compatibility aliases.
+Built-ins: Universal MP4, WhatsApp, High Quality, Web Compatible. Custom profile architecture is validated.
+Affected profile/media/xtask qualification PASS.
 
-Canonical Foundation:
-`docs/foundation/KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION.md`
+G5_PROCESSING_ENGINE_DECOUPLING=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G5_CHECKPOINT_SHA=`33e3d93c594081f0050496bcaff02de5f881af28`
+Processing now consumes an acquired media path plus ExportProfile and is independent of acquisition provenance.
+MediaProbe drives remux/transcode decisions; compatible general media can remux, incompatible media transcodes, and size-constrained profiles keep bounded post-encode verification.
+Current v2 UI behavior is preserved by constructing a validated WhatsApp profile.
+Affected processing/media integration qualification PASS under OP-0099.
 
-Nine pillars:
-1. PRODUCT_IDENTITY
-2. INPUT_SOURCE_ARCHITECTURE
-3. MEDIA_PROBE
-4. PROCESSING_ENGINE
-5. EXPORT_PROFILE
-6. UI_FOUNDATION
-7. INTERNATIONALIZATION
-8. INTERACTION_AND_ACCESSIBILITY
-9. UI_TESTABILITY
+G6_UI_DESIGN_SYSTEM=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G6_CHECKPOINT_SHA=`6ab0f026a270f26e361b3b649b1321b00e74db53`
+Rust-owned UI foundations now provide logical direction/mirroring, BiDi isolation, semantic focus order, caller-tuned responsive layout classes, System/Light/Dark theme preference, and semantic design tokens.
+UI foundation tests: 13/13 PASS; lib check/Clippy and repository policy gate PASS under OP-0103/OP-0104.
 
-Foundation baseline:
-- GUI framework: iced 0.14.0;
-- iced default features: disabled;
-- renderer: tiny-skia;
-- Rust: 1.98.1;
-- Cargo.lock required;
-- qualified builds use --locked;
-- repository-owned implementation remains 100% Rust.
+G7_V3_MAIN_SCREEN=VERIFIED_SUCCESS_LOCAL_CHECKPOINTS
+G7A_CHECKPOINT_SHA=`083da022e376174725b7420568d05fbdd4160358`
+G7B_CHECKPOINT_SHA=`6615a5021f670eda39fdf1a193c0f685a9ae743e`
+G7C_CHECKPOINT_SHA=`40a835142e0786c485b7926e5fa57ef0f52beba8`
+G7 now supports LocalFile and RemoteUrl UX, optional drag/drop with required file picker fallback, MediaProbe metadata display, ExportProfile selection, AppViewState-driven progress, responsive Compact/Standard/Wide layout, application-owned RTL/LTR visual ordering, System/Light/Dark theme preference, and keyboard/focus/testability wiring.
+Static and focused local qualification PASS. Windows native responsive/theme/semantic keyboard-focus interaction is now VERIFIED_SUCCESS under G8; screen-reader accessibility remains unclaimed.
 
-RTL layout is application-owned until an upstream capability is released and independently
-qualified. Reference: iced-rs/iced#3303. The application must not depend on that unmerged PR.
+## Current phase — G7R Identity Migration / Repository Rename
+Goal: migrate product/repository identity to KaspaPulse Media Studio / KaspaPulse/media-studio while preserving v2 history and user settings continuity.
 
-Screen-reader accessibility is not claimed until toolkit support and native verification.
-WCAG 2.2 is a design reference; WCAG2ICT 2.2 is non-web-software guidance. No formal
-accessibility conformance claim is made by the Foundation.
+Required:
+- inventory every current v2 identity surface before mutation;
+- update repository/product/package/application metadata coherently;
+- preserve v2.0.0 tag/release/assets/history immutably;
+- migrate settings identity without losing existing user preferences;
+- update workflow/release artifact naming for future v3 only;
+- perform GitHub repository rename only after local identity delta is qualified;
+- verify old repository URL redirects and historical release access after rename.
 
-## G0 scope
+G7R_A_LOCAL_IDENTITY_MIGRATION=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G7R_A_CHECKPOINT_SHA=`dbcab7807540feb6a70fd6106dca261d3d237bfc`
+G7R_A_CHECKPOINT_TREE=`7b8ea8fcd5aa0127a9c026f04ec7adc94656b2bf`
+Windows v3 release/package identity and packaged GUI smoke PASS; macOS native package identity remains REMOTE_VALIDATION_REQUIRED.
 
-G0 is documentation-only.
+## Current phase — G7R-B GitHub Repository Rename
+Goal: rename the GitHub repository from `KaspaPulse/whatsapp-video-preparer` to `KaspaPulse/media-studio`, update the local origin URL, and verify redirects/history without changing source bytes.
 
-Allowed:
-- `docs/foundation/KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION.md`
-- `PROJECT_STATE.md`
-- `ACTIVE_TASK.md`
-- `CURRENT_STATE.md`
+Required:
+- fresh-read remote main and open PRs before rename;
+- rename only if remote main remains the G0-qualified baseline and no conflicting PR exists;
+- update local origin to the new canonical URL after GitHub confirms rename;
+- verify old repository URL redirects;
+- verify v2.0.0 tag/release/assets remain reachable and unchanged;
+- do not push the 17-commit v3 candidate until rename verification completes.
 
-Forbidden in G0:
-- `src/**`;
-- `tests/**`;
-- Cargo.toml/Cargo.lock mutation;
-- workflow implementation mutation;
-- repository/binary/bundle rename;
-- InputSource implementation;
-- UI implementation.
+G7R_B_GITHUB_REPOSITORY_RENAME=VERIFIED_SUCCESS
+Repository ID `1362998218` is preserved under `KaspaPulse/media-studio`; old repository URLs redirect and the v2.0.0 tag/release/assets remain unchanged.
 
-G0 success requires zero implementation, dependency, and workflow diff from the source base.
+## Current phase — G8 Native Qualification
+Goal: qualify the complete v3 candidate locally where reliable and remotely only for platform/GitHub-only surfaces.
+
+Required:
+- Rust Policy / cargo-deny;
+- Windows x64 native build/package/runtime;
+- macOS x64 and arm64 native build/package/runtime through required remote runners;
+- local file and RemoteUrl acquisition paths;
+- representative FFmpeg-readable formats;
+- yt-dlp supported-source path;
+- built-in export profiles;
+- remux and transcode paths;
+- WhatsApp size-budget evidence;
+- Arabic/LTR responsive/theme/keyboard interaction evidence;
+- SBOM/provenance on exact integrated main.
+
+G8 must maximize local evidence before the first v3 push and must not publish v3.0.0.
+
+### G8 local candidate status
+LOCAL_SUCCESS=YES
+LOCAL_CANDIDATE=QUALIFIED
+KNOWN_LOCAL_BLOCKERS=NONE
+CODE_CANDIDATE_SHA=`679a2a3a5ba046e6cbc734a3e6caf828f11ae0ae`
+CODE_CANDIDATE_TREE=`ee432c82c0c1512974e673709d7829319319e7ad`
+WINDOWS_FINAL_PACKAGE_SHA256=`945c65c33ffa7bf65bf01956b7d7d996f58d7dccbc8736664fe5e4421e5659a6`
+PACKAGE_EVIDENCE_VALIDITY=REUSED_UNCHANGED_APPLICATION_AND_PACKAGE_BYTES
+
+Local/Windows qualification includes: LocalFile/RemoteUrl acquisition, packaged yt-dlp loopback, representative MP4/MKV/MOV/WebM inputs, remux/transcode, reused valid WhatsApp size-budget evidence, final Windows package/GUI smoke, Compact/Standard/Wide responsive RTL, System/Light/Dark themes, and Tab/ShiftTab/Space/Enter/Escape semantic focus. The new test-only repair keeps accepted loopback sockets blocking and prevents recoverable per-client I/O disconnects from terminating the server; targeted native test, targeted Clippy, repository gate, fmt and diff-check PASS.
+
+PR_10_STATE=OPEN
+PR_10_FIRST_EXACT_HEAD=`8e27dbdb3a89e653c2c71ddd31a14895aba86d68`
+PR_10_RUST_POLICY=PASS
+PR_10_WINDOWS=FAILED_REMOTE_URL_LOOPBACK_HARNESS
+PR_10_MACOS_ARM64=PASS
+PR_10_MACOS_X64=FAILED_HDIUTIL_RESOURCE_BUSY
+
+REMOTE_VALIDATION_REQUIRED=YES
+Remote-only/required gates on the repaired exact head: Rust Policy, Windows workflow, macOS x64/arm64 native build/package/harness, then exact-main provenance/SBOM after merge.
+
+## Baselines
+GUI_FRAMEWORK=iced
+GUI_FRAMEWORK_BASELINE=0.14.0
+RUST_BASELINE=1.98.1
+CARGO_LOCK_REQUIRED=YES
+BUILD_WITH_LOCKED=YES
+OWNED_IMPLEMENTATION=100_PERCENT_RUST
 
 ## Continuity
-
-Canonical operation journal:
+Canonical journal:
 `C:\WVP-Rust-Migration-20260923\OPERATION_JOURNAL.md`
 
-Execution policy:
+Policies:
 `RECOVER → RECONCILE → CLASSIFY → CONTINUE`
-
-After meaningful state transitions:
 `PERSIST → VERIFY → CHECKPOINT → CONTINUE`
-
-Evidence policy:
-- TEST_THE_AFFECTED_SURFACE
-- REUSE_VALID_EVIDENCE
-- RERUN_ONLY_WHEN_INVALIDATED
-- NO_FAKE_PASS
-
-## Current classification
-
-G0 Foundation documentation: IN_PROGRESS
-V3 implementation: NOT_STARTED
-Repository rename: DEFERRED
-v3.0.0 release: NOT_STARTED
+`TEST_THE_AFFECTED_SURFACE / REUSE_VALID_EVIDENCE / RERUN_ONLY_WHEN_INVALIDATED / NO_FAKE_PASS`
 
 NEXT ACTION:
-Finish the G0 documentation-only delta, verify the exact allowed-path diff, commit/push/PR,
-wait for required exact-head checks, merge with no drift, verify exact-main, then proceed
-automatically to G1 under the owner authorization.
+Push the single repaired and locally qualified candidate to the existing PR #10 branch once, observe only automatically triggered exact-head Rust Policy + Windows + macOS x64/arm64 validation, merge only after success, then verify exact-main provenance/SBOM before entering G9.

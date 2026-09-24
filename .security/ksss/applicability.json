@@ -1,6 +1,6 @@
 {
   "schema": "wvp-ksss-applicability-v1",
-  "repository": "KaspaPulse/whatsapp-video-preparer",
+  "repository": "KaspaPulse/media-studio",
   "profile": "medium",
   "required_layers": ["L0", "L1", "L2", "L3", "L4", "L5", "L7", "L8", "L9", "L10", "L11", "L14"],
   "conditional_layers": ["L6", "L12", "L13"],

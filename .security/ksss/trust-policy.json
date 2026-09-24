@@ -1,6 +1,6 @@
 {
   "schema": "wvp-ksss-consumer-trust-policy-v1",
-  "repository": "KaspaPulse/whatsapp-video-preparer",
+  "repository": "KaspaPulse/media-studio",
   "ksss_release": "v1.2.0",
   "ksss_source_sha": "967ed5068947a39961d5d5cc483ef65d25a61059",
   "policy_bundle_digest": "3c1c8b449d736aba5fec5cffd688496b06d81f287f55fff4c3f42e36c3b58ec6",

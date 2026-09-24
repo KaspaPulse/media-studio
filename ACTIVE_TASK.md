@@ -1,77 +1,74 @@
 # ACTIVE TASK
 
 ## Task
-
 KASPAPULSE_MEDIA_STUDIO_V3
 
-## Phase
-
-G0 — KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION_FREEZE
-
 ## Status
-
 IN_PROGRESS
 
-## Authorization
+## Current phase
+G8 — NATIVE QUALIFICATION
 
-The owner has granted continuous authorization for the v3 task through G0 → G9, including
-branches, source/tests/docs/governance edits, required Cargo changes, commits, push, PRs,
-CI, merges after gates, repository rename to `KaspaPulse/media-studio`, v3.0.0 tag and
-GitHub Release, release assets, checksums, SBOM/provenance verification, and durable
-state/checkpoints.
+## Completed
+G0_FOUNDATION_FREEZE=PASS
+G1_PRODUCT_DOMAIN_MODEL=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G2_SOURCE_ACQUISITION=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G3_MEDIA_PROBE=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G4_EXPORT_PROFILES=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G5_PROCESSING_ENGINE_DECOUPLING=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G6_UI_DESIGN_SYSTEM=VERIFIED_SUCCESS_LOCAL_CHECKPOINT
+G7_V3_MAIN_SCREEN=VERIFIED_SUCCESS_LOCAL_CHECKPOINTS
+G7_NATIVE_INTERACTION_QUALIFICATION=VERIFIED_SUCCESS_WINDOWS_NATIVE
 
-Out of scope:
-- force push/history rewrite;
-- deletion or rewriting of v2 tags/releases/assets;
-- credential rotation;
-- DNS changes;
-- unrelated production infrastructure;
-- DRM circumvention;
-- unrelated repositories.
+G7C checkpoint:
+`40a835142e0786c485b7926e5fa57ef0f52beba8`
 
-## Source baseline
+## G7R objective
+Migrate identity from WhatsApp Video Preparer / KaspaPulse/whatsapp-video-preparer to KaspaPulse Media Studio / KaspaPulse/media-studio without rewriting v2 history.
 
-SOURCE_BASE_SHA:
-`2440690ecc1845b79de47550e672d767edbb9393`
+Required decisions:
+- inventory all repository/product/package/bundle/settings/workflow/release identity surfaces;
+- preserve v2.0.0 tag/release/assets unchanged;
+- provide settings identity migration so existing users retain preferences;
+- update future v3 artifact and workflow metadata only;
+- locally qualify the identity delta before GitHub repository rename;
+- after authorized rename, verify redirects and historical release access.
 
-SOURCE_BASE_TREE:
-`b712b1da64b5de3739cc087292d1cb427621a931`
+G7R-A local identity migration is qualified at `dbcab7807540feb6a70fd6106dca261d3d237bfc` / tree `7b8ea8fcd5aa0127a9c026f04ec7adc94656b2bf`.
 
-CURRENT_PRODUCT:
-WhatsApp Video Preparer 2.0.0
+G7R_B_GITHUB_REPOSITORY_RENAME=VERIFIED_SUCCESS
+Repository ID `1362998218` is preserved at `KaspaPulse/media-studio`; old repository URLs redirect and v2.0.0 history remains intact.
 
-TARGET_PRODUCT:
-KaspaPulse Media Studio 3.0.0
+## G8 objective
+Qualify the complete Media Studio v3 candidate locally wherever reliable, then use one qualified push for required GitHub/macOS validation.
 
-TARGET_REPOSITORY:
-`KaspaPulse/media-studio`
+Required:
+- Windows native candidate and package identity;
+- local/remote acquisition integration;
+- representative media formats;
+- remux/transcode/profile/WhatsApp budget evidence;
+- responsive RTL/LTR/theme/keyboard interaction evidence;
+- exact-head Windows/macOS/Rust Policy remote CI after local qualification;
+- exact-main SBOM/provenance after merge.
 
-## G0 objective
+No v3 release tag/publication until G8 closes.
 
-Freeze a versioned documentation-only Foundation before any v3 implementation.
+## G8 local qualification
+LOCAL_SUCCESS=YES
+LOCAL_CANDIDATE=QUALIFIED
+KNOWN_LOCAL_BLOCKERS=NONE
+LOCAL_REPAIR_HEAD=`679a2a3a5ba046e6cbc734a3e6caf828f11ae0ae`
+LOCAL_REPAIR_TREE=`ee432c82c0c1512974e673709d7829319319e7ad`
 
-Canonical document:
-`docs/foundation/KASPAPULSE_MEDIA_STUDIO_V3_FOUNDATION.md`
+Verified/reused locally on Windows: Rust/KSSS/cargo-deny/Clippy/fmt gates; exact-code release/package/GUI smoke; LocalFile read-only; packaged yt-dlp RemoteUrl loopback; MP4/MKV/MOV/WebM; remux/transcode; WhatsApp size-budget evidence; Compact/Standard/Wide RTL UI; System/Light/Dark themes; Tab/ShiftTab/Space/Enter/Escape semantic focus. The failed GitHub RemoteUrl loopback harness was repaired in test-only code and the targeted native test, targeted Clippy, repository gate, fmt, and diff-check now PASS locally. Existing package evidence remains valid because application/package bytes did not change.
 
-Required G0 evidence:
-- Foundation document complete/versioned;
-- nine pillars defined;
-- architectural invariants defined;
-- required-vs-verified semantics defined;
-- v2 history preserved;
-- implementation source diff = 0;
-- dependency diff = 0;
-- workflow diff = 0;
-- v3 implementation remains NOT_STARTED.
+PR #10 first exact-head attempt: Rust Policy PASS; macOS arm64 PASS; Windows FAILED only in RemoteUrl loopback harness; macOS x64 FAILED only at DMG creation with `hdiutil: Resource busy`.
+
+REMOTE_VALIDATION_REQUIRED=YES
+Required remotely on the repaired exact head: automatic Rust Policy, Windows workflow, macOS x64/arm64 build/package/native harness; after merge, exact-main provenance and SPDX SBOM attestations.
 
 ## Do not repeat
-
-Do not rerun v2 Rust migration, build, packaging, GUI smoke, SBOM, provenance, or release
-qualification merely because v3 G0 exists. Reuse v2 evidence as historical evidence while
-its relevant predicates remain unchanged.
+Do not replay G0-G7 qualification while relevant predicates remain unchanged.
 
 ## Next safe action
-
-Verify the G0 documentation diff, commit only the four allowed paths, push and open the G0
-PR, verify exact-head required checks, merge without drift, verify exact-main, then continue
-to G1 automatically.
+Push the single repaired and locally qualified commit to the existing PR #10 branch once. Observe only the automatically triggered exact-head Windows/macOS/Rust Policy validation; do not manually rerun the old failed workflows and do not merge until every required exact-head gate passes.

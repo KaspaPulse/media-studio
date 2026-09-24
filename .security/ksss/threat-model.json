@@ -1,8 +1,8 @@
 {
   "version": "1.0.0",
-  "repository": "KaspaPulse/whatsapp-video-preparer",
+  "repository": "KaspaPulse/media-studio",
   "surfaces": [
-    "URL input and remote media acquisition",
+    "local media input, URL input, and remote media acquisition",
     "yt-dlp helper execution",
     "FFprobe media inspection",
     "FFmpeg transcoding",
@@ -11,8 +11,8 @@
     "release artifact and helper-tool supply chain"
   ],
   "assets": [
-    "downloaded source media",
-    "generated WhatsApp clips",
+    "local and downloaded source media",
+    "generated media outputs, including WhatsApp-profile clips",
     "user-selected output paths",
     "application settings",
     "packaged executable and release artifacts",
@@ -25,9 +25,9 @@
       "requirements": ["http/https validation", "structured argument arrays", "no shell command construction"]
     },
     {
-      "from": "downloaded media",
+      "from": "local or downloaded media",
       "to": "FFprobe/FFmpeg",
-      "requirements": ["bounded output directory", "explicit stream mapping", "actual post-encode size verification"]
+      "requirements": ["read-only local source handling", "bounded output directory", "explicit stream mapping", "profile-scoped output verification"]
     },
     {
       "from": "application",

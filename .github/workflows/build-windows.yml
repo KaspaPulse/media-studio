@@ -42,23 +42,26 @@ jobs:
         run: cargo test --workspace --all-targets --locked
 
       - name: Build release executable
-        run: cargo build --release --locked -p whatsapp-video-preparer
+        run: cargo build --release --locked -p media-studio
 
       - name: Package with pinned media helpers
-        run: cargo run -p xtask --locked -- package-windows target/release/whatsapp-video-preparer.exe .artifacts/package/WhatsAppVideoPreparer-Windows-x64
+        run: cargo run -p xtask --locked -- package-windows target/release/media-studio.exe .artifacts/package/KaspaPulseMediaStudio-Windows-x64
+
+      - name: V3 native media integration
+        run: cargo run -p xtask --locked -- verify-v3-package .artifacts/package/KaspaPulseMediaStudio-Windows-x64
 
       - name: Real size-budget regression test
-        run: cargo run -p xtask --locked -- verify-size-budget-package .artifacts/package/WhatsAppVideoPreparer-Windows-x64
+        run: cargo run -p xtask --locked -- verify-size-budget-package .artifacts/package/KaspaPulseMediaStudio-Windows-x64
 
       - name: Native GUI startup smoke
-        run: cargo run -p xtask --locked -- smoke .artifacts/package/WhatsAppVideoPreparer-Windows-x64/WhatsAppVideoPreparer.exe
+        run: cargo run -p xtask --locked -- smoke .artifacts/package/KaspaPulseMediaStudio-Windows-x64/KaspaPulseMediaStudio.exe
 
       - name: Generate SPDX 2.3 SBOM
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           path: .
           format: spdx-json
-          output-file: .artifacts/package/WhatsAppVideoPreparer-Windows-x64.spdx.json
+          output-file: .artifacts/package/KaspaPulseMediaStudio-Windows-x64.spdx.json
           upload-artifact: false
           upload-release-assets: false
           syft-version: v1.52.0
@@ -66,10 +69,10 @@ jobs:
       - name: Upload qualified Windows bundle
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: WhatsAppVideoPreparer-Windows-x64-${{ github.sha }}
+          name: KaspaPulseMediaStudio-Windows-x64-${{ github.sha }}
           path: |
-            .artifacts/package/WhatsAppVideoPreparer-Windows-x64/
-            .artifacts/package/WhatsAppVideoPreparer-Windows-x64.spdx.json
+            .artifacts/package/KaspaPulseMediaStudio-Windows-x64/
+            .artifacts/package/KaspaPulseMediaStudio-Windows-x64.spdx.json
           if-no-files-found: error
           retention-days: 14
 
@@ -87,16 +90,16 @@ jobs:
       - name: Download qualified Windows bundle
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: WhatsAppVideoPreparer-Windows-x64-${{ github.sha }}
+          name: KaspaPulseMediaStudio-Windows-x64-${{ github.sha }}
           path: .artifacts/package
 
       - name: Attest build provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-checksums: .artifacts/package/WhatsAppVideoPreparer-Windows-x64/SHA256SUMS
+          subject-checksums: .artifacts/package/KaspaPulseMediaStudio-Windows-x64/SHA256SUMS
 
       - name: Attest SPDX SBOM
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
-          subject-checksums: .artifacts/package/WhatsAppVideoPreparer-Windows-x64/SHA256SUMS
-          sbom-path: .artifacts/package/WhatsAppVideoPreparer-Windows-x64.spdx.json
+          subject-checksums: .artifacts/package/KaspaPulseMediaStudio-Windows-x64/SHA256SUMS
+          sbom-path: .artifacts/package/KaspaPulseMediaStudio-Windows-x64.spdx.json

@@ -1,12 +1,12 @@
 {
   "schema_family": "ksss-adoption",
   "schema_version": "1.0.0",
-  "repository": "KaspaPulse/whatsapp-video-preparer",
+  "repository": "KaspaPulse/media-studio",
   "ksss_release": "v1.2.0",
   "ksss_source_sha": "967ed5068947a39961d5d5cc483ef65d25a61059",
   "policy_bundle_digest": "3c1c8b449d736aba5fec5cffd688496b06d81f287f55fff4c3f42e36c3b58ec6",
   "repository_profile": "medium",
-  "risk_classification_digest": "6b6d350525451a97f18ae165111ae36bb5e9a3e1a5d63f87629af0d64d368af1",
-  "applicability_digest": "42e407ca8da520c92048b6d78117e62576068cce570e8fae96d590a0e588a73b",
+  "risk_classification_digest": "1a0c0d5dec401ca1f9f615e4a402ce3331853c9a435c93865209f098a6397376",
+  "applicability_digest": "8d7701afa8dcd4f7bd181c2a352af097a3fe755d410f2cae53fcb7d7a2c38c62",
   "adopted_at": "2026-09-23T16:08:31.6378520Z"
 }

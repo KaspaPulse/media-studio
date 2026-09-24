@@ -3,10 +3,10 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-use tempfile::tempdir;
-use whatsapp_video_preparer::media::{
+use media_studio::media::{
     DEFAULT_SEGMENT_SECONDS, DEFAULT_TARGET_BYTES, Toolchain, create_segments,
 };
+use tempfile::tempdir;
 
 #[test]
 #[ignore = "requires pinned external FFmpeg/FFprobe helpers"]
