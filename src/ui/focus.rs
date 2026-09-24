@@ -1,3 +1,34 @@
+use iced::event;
+use iced::keyboard::{Key, Modifiers, key::Named};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum KeyboardCommand {
+    FocusNext,
+    FocusPrevious,
+    ActivatePrimary,
+    DismissTransient,
+}
+
+#[must_use]
+pub fn keyboard_command(
+    key: &Key,
+    modifiers: Modifiers,
+    repeat: bool,
+    status: event::Status,
+) -> Option<KeyboardCommand> {
+    if repeat || status == event::Status::Captured {
+        return None;
+    }
+
+    match key {
+        Key::Named(Named::Tab) if modifiers.shift() => Some(KeyboardCommand::FocusPrevious),
+        Key::Named(Named::Tab) => Some(KeyboardCommand::FocusNext),
+        Key::Named(Named::Enter) => Some(KeyboardCommand::ActivatePrimary),
+        Key::Named(Named::Escape) => Some(KeyboardCommand::DismissTransient),
+        _ => None,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FocusKey(&'static str);
 
@@ -67,6 +98,64 @@ mod tests {
     fn focus_keys_are_stable_testable_identifiers() {
         assert_eq!(SOURCE.as_str(), "source");
         assert_eq!(order_keys(), ["source", "profile", "output"]);
+    }
+
+    #[test]
+    fn keyboard_commands_are_emitted_only_for_uncaptured_non_repeated_keys() {
+        assert_eq!(
+            keyboard_command(
+                &Key::Named(Named::Tab),
+                Modifiers::NONE,
+                false,
+                event::Status::Ignored,
+            ),
+            Some(KeyboardCommand::FocusNext)
+        );
+        assert_eq!(
+            keyboard_command(
+                &Key::Named(Named::Tab),
+                Modifiers::SHIFT,
+                false,
+                event::Status::Ignored,
+            ),
+            Some(KeyboardCommand::FocusPrevious)
+        );
+        assert_eq!(
+            keyboard_command(
+                &Key::Named(Named::Enter),
+                Modifiers::NONE,
+                false,
+                event::Status::Ignored,
+            ),
+            Some(KeyboardCommand::ActivatePrimary)
+        );
+        assert_eq!(
+            keyboard_command(
+                &Key::Named(Named::Escape),
+                Modifiers::NONE,
+                false,
+                event::Status::Ignored,
+            ),
+            Some(KeyboardCommand::DismissTransient)
+        );
+        assert_eq!(
+            keyboard_command(
+                &Key::Named(Named::Tab),
+                Modifiers::NONE,
+                true,
+                event::Status::Ignored,
+            ),
+            None
+        );
+        assert_eq!(
+            keyboard_command(
+                &Key::Named(Named::Tab),
+                Modifiers::NONE,
+                false,
+                event::Status::Captured,
+            ),
+            None
+        );
     }
 
     fn order_keys() -> [&'static str; 3] {

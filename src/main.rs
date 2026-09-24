@@ -23,6 +23,7 @@ use whatsapp_video_preparer::settings::AppSettings;
 use whatsapp_video_preparer::ui::app::{BUILTIN_PROFILES, media_summary, profile_label};
 use whatsapp_video_preparer::ui::bidi::isolate_ltr;
 use whatsapp_video_preparer::ui::direction::{logical_pair, logical_sequence};
+use whatsapp_video_preparer::ui::focus::{KeyboardCommand, keyboard_command};
 use whatsapp_video_preparer::ui::layout::{LayoutBreakpoints, LayoutClass};
 use whatsapp_video_preparer::ui::theme::{ResolvedTheme, ThemePreference, resolved_system_theme};
 use whatsapp_video_preparer::ui::tokens::Spacing;
@@ -124,6 +125,10 @@ enum SourceMode {
     LocalFile,
 }
 
+const SOURCE_URL_FOCUS_ID: &str = "source-url";
+const DURATION_FOCUS_ID: &str = "duration";
+const OUTPUT_FOCUS_ID: &str = "output";
+
 #[derive(Debug, Clone)]
 enum Message {
     UrlChanged(String),
@@ -142,6 +147,10 @@ enum Message {
     OpenSource,
     OpenClip,
     PollWorkers,
+    FocusNext,
+    FocusPrevious,
+    ActivatePrimary,
+    DismissTransient,
 }
 
 struct App {
@@ -222,6 +231,22 @@ impl App {
 }
 
 fn update(app: &mut App, message: Message) -> Task<Message> {
+    match &message {
+        Message::FocusNext => return iced::widget::operation::focus_next(),
+        Message::FocusPrevious => return iced::widget::operation::focus_previous(),
+        Message::ActivatePrimary => {
+            if app.can_start() {
+                prepare(app);
+            }
+            return Task::none();
+        }
+        Message::DismissTransient => {
+            dismiss_transient(app);
+            return Task::none();
+        }
+        _ => {}
+    }
+
     match message {
         Message::UrlChanged(value) => {
             if !app.operation_active() {
@@ -266,6 +291,10 @@ fn update(app: &mut App, message: Message) -> Task<Message> {
         Message::OpenSource => open_path(app, app.last_source.clone()),
         Message::OpenClip => open_path(app, app.last_clip.clone()),
         Message::PollWorkers => poll_workers(app),
+        Message::FocusNext
+        | Message::FocusPrevious
+        | Message::ActivatePrimary
+        | Message::DismissTransient => unreachable!("keyboard command handled before state update"),
     }
     Task::none()
 }
@@ -384,6 +413,22 @@ fn toggle_theme(app: &mut App) {
     }
     app.theme_preference = app.theme_preference.next();
     save_settings(app);
+}
+
+fn dismiss_transient(app: &mut App) {
+    if app.operation_active() {
+        return;
+    }
+
+    if app.local_source.is_some() && app.media_metadata.is_some() {
+        app.view_state = AppViewState::SourceReady;
+        strings(app.language)
+            .source_ready
+            .clone_into(&mut app.status);
+    } else {
+        app.view_state = AppViewState::Empty;
+        strings(app.language).ready.clone_into(&mut app.status);
+    }
 }
 
 fn save_settings(app: &App) {
@@ -515,11 +560,23 @@ fn apply_worker_event(app: &mut App, event: WorkerEvent) {
 
 fn runtime_event(
     event: iced::Event,
-    _status: event::Status,
+    status: event::Status,
     _window: window::Id,
 ) -> Option<Message> {
     match event {
         iced::Event::Window(window::Event::FileDropped(path)) => Some(Message::FileDropped(path)),
+        iced::Event::Keyboard(iced::keyboard::Event::KeyPressed {
+            key,
+            modifiers,
+            repeat,
+            ..
+        }) => match keyboard_command(&key, modifiers, repeat, status) {
+            Some(KeyboardCommand::FocusNext) => Some(Message::FocusNext),
+            Some(KeyboardCommand::FocusPrevious) => Some(Message::FocusPrevious),
+            Some(KeyboardCommand::ActivatePrimary) => Some(Message::ActivatePrimary),
+            Some(KeyboardCommand::DismissTransient) => Some(Message::DismissTransient),
+            None => None,
+        },
         _ => None,
     }
 }
@@ -633,6 +690,7 @@ fn source_section<'a>(
     direction: UiDirection,
 ) -> Element<'a, Message> {
     let url_input: Element<'a, Message> = text_input(t.url_placeholder, &app.url)
+        .id(SOURCE_URL_FOCUS_ID)
         .on_input(Message::UrlChanged)
         .align_x(Horizontal::Left)
         .padding(10)
@@ -694,6 +752,7 @@ fn profile_section<'a>(
     };
 
     let duration_input: Element<'a, Message> = text_input("", &app.duration)
+        .id(DURATION_FOCUS_ID)
         .on_input(Message::DurationChanged)
         .align_x(Horizontal::Left)
         .padding(10)
@@ -738,6 +797,7 @@ fn output_section<'a>(
     direction: UiDirection,
 ) -> Element<'a, Message> {
     let output_input: Element<'a, Message> = text_input("", &app.output)
+        .id(OUTPUT_FOCUS_ID)
         .on_input(Message::OutputChanged)
         .align_x(Horizontal::Left)
         .padding(10)
