@@ -57,14 +57,18 @@ No v3 release tag/publication until G8 closes.
 LOCAL_SUCCESS=YES
 LOCAL_CANDIDATE=QUALIFIED
 KNOWN_LOCAL_BLOCKERS=NONE
+LOCAL_REPAIR_HEAD=`679a2a3a5ba046e6cbc734a3e6caf828f11ae0ae`
+LOCAL_REPAIR_TREE=`ee432c82c0c1512974e673709d7829319319e7ad`
 
-Verified/reused locally on Windows: Rust/KSSS/cargo-deny/Clippy/fmt gates; exact-code release/package/GUI smoke; LocalFile read-only; packaged yt-dlp RemoteUrl loopback; MP4/MKV/MOV/WebM; remux/transcode; WhatsApp size-budget evidence; Compact/Standard/Wide RTL UI; System/Light/Dark themes; Tab/ShiftTab/Space/Enter/Escape semantic focus.
+Verified/reused locally on Windows: Rust/KSSS/cargo-deny/Clippy/fmt gates; exact-code release/package/GUI smoke; LocalFile read-only; packaged yt-dlp RemoteUrl loopback; MP4/MKV/MOV/WebM; remux/transcode; WhatsApp size-budget evidence; Compact/Standard/Wide RTL UI; System/Light/Dark themes; Tab/ShiftTab/Space/Enter/Escape semantic focus. The failed GitHub RemoteUrl loopback harness was repaired in test-only code and the targeted native test, targeted Clippy, repository gate, fmt, and diff-check now PASS locally. Existing package evidence remains valid because application/package bytes did not change.
+
+PR #10 first exact-head attempt: Rust Policy PASS; macOS arm64 PASS; Windows FAILED only in RemoteUrl loopback harness; macOS x64 FAILED only at DMG creation with `hdiutil: Resource busy`.
 
 REMOTE_VALIDATION_REQUIRED=YES
-Required remotely: exact-head Rust Policy, Windows workflow, macOS x64/arm64 build/package/native harness; after merge, exact-main provenance and SPDX SBOM attestations.
+Required remotely on the repaired exact head: automatic Rust Policy, Windows workflow, macOS x64/arm64 build/package/native harness; after merge, exact-main provenance and SPDX SBOM attestations.
 
 ## Do not repeat
 Do not replay G0-G7 qualification while relevant predicates remain unchanged.
 
 ## Next safe action
-Push the single locally qualified v3 candidate branch once. Use GitHub only for the required exact-head Windows/macOS/Rust Policy validation; do not start a push/fail/push development loop.
+Push the single repaired and locally qualified commit to the existing PR #10 branch once. Observe only the automatically triggered exact-head Windows/macOS/Rust Policy validation; do not manually rerun the old failed workflows and do not merge until every required exact-head gate passes.

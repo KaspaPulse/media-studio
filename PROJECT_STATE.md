@@ -109,14 +109,22 @@ G8 must maximize local evidence before the first v3 push and must not publish v3
 LOCAL_SUCCESS=YES
 LOCAL_CANDIDATE=QUALIFIED
 KNOWN_LOCAL_BLOCKERS=NONE
-CODE_CANDIDATE_SHA=`7c287d23c9f5c319a99283ecf9604201342335ee`
-CODE_CANDIDATE_TREE=`fb05ac1ac6a621bdea4db1cd43e10b7780709629`
+CODE_CANDIDATE_SHA=`679a2a3a5ba046e6cbc734a3e6caf828f11ae0ae`
+CODE_CANDIDATE_TREE=`ee432c82c0c1512974e673709d7829319319e7ad`
 WINDOWS_FINAL_PACKAGE_SHA256=`945c65c33ffa7bf65bf01956b7d7d996f58d7dccbc8736664fe5e4421e5659a6`
+PACKAGE_EVIDENCE_VALIDITY=REUSED_UNCHANGED_APPLICATION_AND_PACKAGE_BYTES
 
-Local/Windows qualification includes: LocalFile/RemoteUrl acquisition, packaged yt-dlp loopback, representative MP4/MKV/MOV/WebM inputs, remux/transcode, reused valid WhatsApp size-budget evidence, final Windows package/GUI smoke, Compact/Standard/Wide responsive RTL, System/Light/Dark themes, and Tab/ShiftTab/Space/Enter/Escape semantic focus.
+Local/Windows qualification includes: LocalFile/RemoteUrl acquisition, packaged yt-dlp loopback, representative MP4/MKV/MOV/WebM inputs, remux/transcode, reused valid WhatsApp size-budget evidence, final Windows package/GUI smoke, Compact/Standard/Wide responsive RTL, System/Light/Dark themes, and Tab/ShiftTab/Space/Enter/Escape semantic focus. The new test-only repair keeps accepted loopback sockets blocking and prevents recoverable per-client I/O disconnects from terminating the server; targeted native test, targeted Clippy, repository gate, fmt and diff-check PASS.
+
+PR_10_STATE=OPEN
+PR_10_FIRST_EXACT_HEAD=`8e27dbdb3a89e653c2c71ddd31a14895aba86d68`
+PR_10_RUST_POLICY=PASS
+PR_10_WINDOWS=FAILED_REMOTE_URL_LOOPBACK_HARNESS
+PR_10_MACOS_ARM64=PASS
+PR_10_MACOS_X64=FAILED_HDIUTIL_RESOURCE_BUSY
 
 REMOTE_VALIDATION_REQUIRED=YES
-Remote-only/required gates: exact-head Rust Policy, Windows workflow, macOS x64/arm64 native build/package/harness, then exact-main provenance/SBOM after merge.
+Remote-only/required gates on the repaired exact head: Rust Policy, Windows workflow, macOS x64/arm64 native build/package/harness, then exact-main provenance/SBOM after merge.
 
 ## Baselines
 GUI_FRAMEWORK=iced
@@ -136,4 +144,4 @@ Policies:
 `TEST_THE_AFFECTED_SURFACE / REUSE_VALID_EVIDENCE / RERUN_ONLY_WHEN_INVALIDATED / NO_FAKE_PASS`
 
 NEXT ACTION:
-Push the single locally qualified v3 candidate branch once, require exact-head Rust Policy + Windows + macOS x64/arm64 validation, merge only after success, then verify exact-main provenance/SBOM before entering G9.
+Push the single repaired and locally qualified candidate to the existing PR #10 branch once, observe only automatically triggered exact-head Rust Policy + Windows + macOS x64/arm64 validation, merge only after success, then verify exact-main provenance/SBOM before entering G9.
